@@ -14,7 +14,7 @@ import threading
 import time
 from pathlib import Path
 
-_REPO = Path(os.environ.get("PGX_REPO_ROOT") or Path(__file__).resolve().parents[1])
+_REPO = Path(os.environ.get("PGX_REPO_ROOT") or Path(__file__).resolve().parents[2])
 for _sub in ("PGxRoute", "Verifier"):
     if str(_REPO / _sub) not in sys.path:
         sys.path.insert(0, str(_REPO / _sub))

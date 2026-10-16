@@ -4,7 +4,7 @@
 #   bash train.sh data/fg/fold0.jsonl data/fg/gt_claims.json router_fg_fold0 [hydra overrides ...]
 #
 # Every step, the questions in the batch are answered by all three PGxRoute pipelines and scored
-# by the Verifier (live_reward.py), so their model servers must be up and configured through the
+# by the Verifier (router_reward/live_reward.py), so their model servers must be up and configured through the
 # environment before launching (see README.md). COST_WEIGHT sets the token-cost penalty.
 set -euo pipefail
 
@@ -24,8 +24,8 @@ export REWARD_ADV_MODE=cache_baseline
 export COST_WEIGHT="${COST_WEIGHT:-0}"
 export STRICT_TOOL_PARSE=1
 export GT_CLAIMS_FILE="$GT_FILE"
-export BASE_DIR="$HERE" CONFIG_ROOT="$HERE" PGX_REPO_ROOT="$(dirname "$HERE")"
-export PYTHONPATH="$HERE:$PGX_REPO_ROOT/PGxRoute:$PGX_REPO_ROOT/Verifier${PYTHONPATH:+:$PYTHONPATH}"
+export BASE_DIR="$HERE" CONFIG_ROOT="$HERE/configs" PGX_REPO_ROOT="$(dirname "$HERE")"
+export PYTHONPATH="$HERE:$HERE/configs:$PGX_REPO_ROOT/PGxRoute:$PGX_REPO_ROOT/Verifier${PYTHONPATH:+:$PYTHONPATH}"
 export RAY_USAGE_STATS_ENABLED=0 PYTORCH_ALLOC_CONF=expandable_segments:True
 
 cd "$HERE"
@@ -33,8 +33,8 @@ python3 -u -m recipe.algo.main_grpo_covaph \
     data.shuffle=True \
     algorithm.adv_estimator=cache_baseline \
     data.train_files="$TRAIN_FILE" \
-    data.train_tool_config_path="$HERE/covaph_tools_3tool.json" \
-    data.test_tool_config_path="$HERE/covaph_tools_3tool.json" \
+    data.train_tool_config_path="$HERE/configs/covaph_tools_3tool.json" \
+    data.test_tool_config_path="$HERE/configs/covaph_tools_3tool.json" \
     +data.my_output_dir="$OUT_DIR" \
     +data.cur_transfer_dir="$OUT_DIR/transfer" \
     +data.model_type="$MODEL_PATH" \
@@ -49,7 +49,7 @@ python3 -u -m recipe.algo.main_grpo_covaph \
     data.truncation=left \
     +data.prompt_mode=pgx \
     data.rollout_diversity_hint_until=0 \
-    +data.vllm_model_configs="$HERE/vllm_model_configs.json" \
+    +data.vllm_model_configs="$HERE/configs/vllm_model_configs.json" \
     algorithm.filter_groups.enable=False \
     algorithm.filter_groups.metric=seq_reward \
     algorithm.kl_ctrl.kl_coef=0.001 \

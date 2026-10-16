@@ -1,6 +1,6 @@
 """Merge a trained router checkpoint's FSDP shards into a Hugging Face model folder.
 
-  python merge_checkpoint.py checkpoints/router_fg_fold0/global_step_27/actor
+  python scripts/merge_checkpoint.py checkpoints/router_fg_fold0/global_step_27/actor
 
 Writes <actor>/_merged (model.safetensors plus the config and tokenizer files), which a vLLM
 server can load, e.g. `vllm serve <actor>/_merged --served-model-name router-fg`. A checkpoint

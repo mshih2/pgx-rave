@@ -83,32 +83,6 @@ for _req in ("USE_EXISTING_QUESTION_TOOL_RESULTS", "QUESTION_TOOL_RESULT_DIR"):
     if not hasattr(_cfg_mod, _req):
         raise ImportError(f"Config missing required {_req} in {_covaph_config_path}")
 
-# Try multiple ways to find LLM_CALL module
-REPO_PATH = os.getenv("REPO_PATH")
-if REPO_PATH:
-    sys.path.insert(0, REPO_PATH)
-else:
-    # Fallback: try to find ToolOrchestra directory relative to this file
-    current_file = Path(__file__).resolve()
-    # This file is in: ToolOrchestra/training/lead_agent/llm_agent/generation_quick3.py
-    # LLM_CALL.py is in: ToolOrchestra/LLM_CALL.py
-    # So we need to go up 3 levels: llm_agent -> lead_agent -> training -> ToolOrchestra
-    toolorchestra_root = current_file.parent.parent.parent.parent
-    if (toolorchestra_root / "LLM_CALL.py").exists():
-        # For `from LLM_CALL import ...`, adding ToolOrchestra/ itself works.
-        # But for `import ToolOrchestra...`, Python needs the *parent* directory on sys.path.
-        sys.path.insert(0, str(toolorchestra_root.parent))
-        sys.path.insert(0, str(toolorchestra_root))
-    else:
-        # Try one more level up (in case we're in a different structure)
-        parent_root = toolorchestra_root.parent
-        if (parent_root / "ToolOrchestra" / "LLM_CALL.py").exists():
-            sys.path.insert(0, str(parent_root))
-            sys.path.insert(0, str(parent_root / "ToolOrchestra"))
-        elif (parent_root / "LLM_CALL.py").exists():
-            sys.path.insert(0, str(parent_root))
-
-from LLM_CALL import get_llm_response
 import multiprocessing as mp
 from transformers import AutoTokenizer
 
@@ -181,7 +155,7 @@ ALL_TOOLS = {
 # Actor is restricted to only these tools
 VALID_COVAPH_TOOL_NAMES = ['tool_a', 'tool_b', 'tool_c']
 
-# Tool name -> pipeline mode (covaph_env.py maps modes to PGxRoute pipelines)
+# Tool name -> pipeline mode (router_reward/covaph_env.py maps modes to PGxRoute pipelines)
 TOOL_TO_MODE = {
     'tool_a': 'skip_retrieve',
     'tool_b': 'module4_only',
@@ -491,23 +465,6 @@ def _write_json_atomic(path: Path, payload: Any) -> None:
         os.fsync(f.fileno())
     os.replace(tmp_path, path)
 
-def _ensure_toolorchestra_on_syspath() -> Optional[Path]:
-    """
-    Ensure the project root (the directory that contains ToolOrchestra/) is on sys.path.
-    This is required under Ray where the working_dir is packaged and sys.path may not include it.
-    Returns the discovered root path if found, else None.
-    """
-    here = Path(__file__).resolve()
-    # Walk up a few levels and look for ToolOrchestra/training/covaph_env.py
-    for parent in [here.parent] + list(here.parents):
-        cand = parent / "ToolOrchestra" / "training" / "covaph_env.py"
-        if cand.exists():
-            p = str(parent)
-            if p not in sys.path:
-                sys.path.insert(0, p)
-            return parent
-    return None
-
 def cut_seq(tokenizer,seq,l):
     if len(seq)==0:
         return {
@@ -597,7 +554,7 @@ def call_tool(arguments):
             # Prefer the packaged ToolOrchestra within the current working dir (Ray working_dir_files),
             # and only fall back to external COVAPH_ROOT if needed.
             # Under Ray job submit, `working_dir` is the training folder. Import directly from there.
-            from covaph_env import call_covaph_tool
+            from router_reward.covaph_env import call_covaph_tool
             
             category_label = category if category_is_covaph else 'qa'
             print(f"[Tool Orchestration] ========== CoVaPh Tool Execution ({category_label} category) ==========")
@@ -726,7 +683,7 @@ def call_tool(arguments):
                 # Prefer the packaged ToolOrchestra within the current working dir (Ray working_dir_files),
                 # and only fall back to external COVAPH_ROOT if needed.
                 # Under Ray job submit, `working_dir` is the training folder. Import directly from there.
-                from covaph_env import call_covaph_tool
+                from router_reward.covaph_env import call_covaph_tool
                 
                 print(f"[Tool Orchestration] ========== CoVaPh Tool Execution (func_call category) ==========")
                 print(f"[Tool Orchestration] Tool: {tool_name}, Mode: {mode}, Query ID: {query_id}")
@@ -2935,7 +2892,7 @@ class LLMGenerationManager:
         # therefore keep a correctly-signed nonzero advantage, and reward magnitudes are preserved.
         from config import REWARD_ADV_MODE as _reward_adv_mode, REWARD_COST_WEIGHT as _reward_cost_weight
         if _reward_adv_mode == "cache_baseline":
-            import live_reward
+            from router_reward import live_reward
             _live_table = live_reward.build_reward_table(
                 all_turn_index, all_turn_problems, self.active_tools, global_steps, my_output_dir)
             _cb_rewards, _cb_details = compute_cache_baseline_rewards(

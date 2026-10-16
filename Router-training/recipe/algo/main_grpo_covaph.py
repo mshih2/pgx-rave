@@ -21,12 +21,15 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 TRAINING_DIR = SCRIPT_DIR.parent.parent.resolve()   # Router-training/
 REPO_ROOT = TRAINING_DIR.parent.resolve()            # holds PGxRoute/ and Verifier/
 
-# `verl`, `recipe`, `lead_agent` and the training modules live under TRAINING_DIR.
-sys.path.insert(0, str(TRAINING_DIR))
+# `verl`, `recipe`, `lead_agent` and `router_reward` live under TRAINING_DIR; the module `config`
+# (reward and rollout settings) under TRAINING_DIR/configs; PGxRoute and Verifier beside it.
+for _p in (REPO_ROOT / "Verifier", REPO_ROOT / "PGxRoute", TRAINING_DIR / "configs", TRAINING_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 # Import the canonical CoVaPh reward manager (single source of truth).
-# Must come after sys.path setup since covaph_reward.py lives in TRAINING_DIR.
-from covaph_reward import CoVaPhRewardManager
+# Must come after the sys.path setup above.
+from router_reward.covaph_reward import CoVaPhRewardManager
 
 # Debug: Print paths for troubleshooting
 if os.getenv("DEBUG_PATHS"):
@@ -110,11 +113,11 @@ def run_grpo(config) -> None:
                         "TOKENIZERS_PARALLELISM": "true",
                         "NCCL_DEBUG": "WARN",
                         "VLLM_LOGGING_LEVEL": "WARN",
-                        "PYTHONPATH": ":".join([str(TRAINING_DIR), str(REPO_ROOT / "PGxRoute"),
-                                                str(REPO_ROOT / "Verifier"),
+                        "PYTHONPATH": ":".join([str(TRAINING_DIR), str(TRAINING_DIR / "configs"),
+                                                str(REPO_ROOT / "PGxRoute"), str(REPO_ROOT / "Verifier"),
                                                 os.getenv("PYTHONPATH", "")]).rstrip(":"),
                         "BASE_DIR": str(TRAINING_DIR),
-                        "CONFIG_ROOT": str(TRAINING_DIR),
+                        "CONFIG_ROOT": str(TRAINING_DIR / "configs"),
                         "PGX_REPO_ROOT": str(REPO_ROOT),
                     },
                 },
@@ -135,7 +138,7 @@ def run_grpo(config) -> None:
 class TaskRunner:
     def run(self, config):
         import time
-        from run_log import setup_run_log
+        from verl.utils.run_log import setup_run_log
 
         log_dir = os.environ.get("RESULTS_DIR") or os.path.dirname(config.trainer.default_local_dir)
         os.makedirs(log_dir, exist_ok=True)

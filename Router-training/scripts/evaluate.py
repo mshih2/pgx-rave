@@ -1,7 +1,7 @@
 """Evaluate a router end to end: route each question, answer it with the chosen pipeline, and
 score the answer with the Verifier.
 
-  python evaluate.py --bank bank.jsonl --fold 1 --router fg --model router-fg-fold0 --out eval/fg_fold0
+  python scripts/evaluate.py --bank bank.jsonl --fold 1 --router fg --model router-fg-fold0 --out eval/fg_fold0
 
 --router is any PGxRoute router (rule, logreg, xgboost, fg, sf); --model and --base-url select
 the served checkpoint of an LLM router, --model-path a trained classifier. Each result is written
@@ -16,7 +16,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 for _sub in ("PGxRoute", "Verifier"):
     if str(ROOT / _sub) not in sys.path:
         sys.path.insert(0, str(ROOT / _sub))
