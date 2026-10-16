@@ -1,0 +1,10 @@
+{
+  "Qwen3-8B": [
+    {
+      "ip_addr": "127.0.0.1",
+      "port": "8002"
+    }
+  ],
+  "vllm_model_config_path": "vllm_model_configs.json"
+}
+
