@@ -1,0 +1,24 @@
+You are curating the reference answer to a clinical pharmacogenomic question from the CPIC
+recommendation lookup's output for it, for use as scoring ground truth.
+
+{{PRINCIPLES}}
+
+{{MATERIAL}}
+
+## What to do
+
+The CPIC section may hold several rows (other drugs, populations or genes the lookup returned).
+Keep only what the question asks for, from the row or rows that apply to this patient, and drop
+the rest.
+
+- Keep CPIC's own words. Copy each field you keep verbatim; do not paraphrase, normalise or
+  shorten inside a printed sentence. You may label each field (Recommendation:, Classification:,
+  Implication:, ...) and order them as the question asks.
+- Always keep the phenotype the recommendation is for, so the answer says whose recommendation
+  it is.
+- Keep a field the question does not ask for only if the recommendation cannot be acted on
+  safely without it (a printed condition, an alternative the recommendation points to).
+- If something the question asks for is not in the CPIC section, say once that the CPIC
+  recommendation does not address it.
+
+Write the answer now. Nothing before it, nothing after it.

@@ -1,0 +1,31 @@
+Two independent readers checked the same claim list against the same answer. Settle their
+findings: decide which ones the claim curator will act on.
+
+## The answer
+
+{{ANSWER}}
+
+## The claims
+
+{{CLAIMS}}
+
+## The two reviews
+
+{{READERS}}
+
+## The settlement rule
+
+- A finding is acted on only if both readers made it independently: the same answer span or the
+  same claim, even under a different label or importance. A finding from one reader is
+  recorded, not acted on.
+- You may overrule a corroborated finding when reading the answer shows it is wrong; quote the
+  answer.
+
+## Output
+
+Return JSON only:
+
+{"actions": [{"kind": "missing|extra|split_error", "claim_n": [0], "answer_quote": "...",
+              "what": "<= 30 words"}],
+ "overruled": [{"finding": "...", "why": "<= 30 words, quoting the answer"}],
+ "single_reader": [{"finding": "...", "reader": 1}]}

@@ -1,0 +1,54 @@
+Two readers have each named, independently and blind to each other, the minimum set of passages
+a clinical pharmacogenomic question's reference answer must be written from. Settle the final set
+and hand the answer writer what it needs to know.
+
+{{PRINCIPLES}}
+
+## What to decide
+
+**The final passage set.** As few passages as cover the question. The test for a member is that
+removing it leaves one of the question's asks, or a fact the answer needs to make its
+recommendation safe to act on, without printed support. A passage that enriches, restates or
+duplicates is out, and so is one serving something the question never raises.
+
+Where the two selections agree, the member is settled; confirm it. Where they differ, that is the
+work of this step: **decide by reading the passage, not by counting votes.** You may also add a
+passage neither reader took, if reading shows the answer needs it, and say why.
+
+What the CPIC section already prints costs nothing. A passage kept only to say that something does
+not apply is a member only if the question raises that comparison.
+
+## The handover to the answer writer
+
+The writer sees the question, the CPIC section, your final passages and these notes, and nothing
+else. Everything a careful writer would get wrong without being told goes into the notes, **in
+the passages' own words: quote, and where you must summarise, put the quotation beside the
+summary.** A note is the one thing in the writer's prompt no passage can contradict, so a wrong
+gloss there passes straight into the answer.
+
+## Hard constraints
+
+- Read every passage you rule on; do not decide by matching strings.
+- Substrings lie: allele names differ by one character, a drug name can sit inside another.
+- Silence is not content: only a boundary the issuing body prints is reportable.
+- Judge from the passages, not from your own pharmacogenomic knowledge.
+
+{{BUNDLE}}
+
+## The two selections
+
+{{SELECTIONS}}
+
+## Output
+
+Return JSON only:
+
+{"final": [{"id": "P3", "why": "the ask or fact it alone serves, <= 15 words"}],
+ "disagreements_resolved": [{"id": "P7", "selections_said": "1 in, 2 out", "verdict": "in", "because": "<= 20 words"}],
+ "for_the_gt_writer": {
+   "api_only": ["asks the CPIC section answers with no passage"],
+   "sole_sources": [{"ask": "...", "id": "P3", "quote": "..."}],
+   "conflicts_to_name": [{"pair": ["P3", "P9"], "what": "<= 25 words; name both, do not average"}],
+   "silence_traps": ["a span that tempts an assertion the sources do not print"],
+   "column_traps": ["a value that belongs to a different drug, phenotype or column"],
+   "must_not_say": ["a specific claim the sources do not support"]}}

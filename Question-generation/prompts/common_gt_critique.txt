@@ -1,0 +1,36 @@
+Another model wrote this reference answer to an everyday medication question. Check it; you and
+that model will settle the answer between you.
+
+{{PRINCIPLES}}
+
+## The question
+
+{{QUESTION}}
+
+## The answer
+
+```text
+{{ANSWER}}
+```
+
+## What to check
+
+- Is every statement correct for a general adult patient, consistent with standard drug
+  information? Is anything stated more strongly or broadly than it should be?
+- Is anything essential to answering safely missing? Only what would change what the patient
+  does counts.
+- Is there anything a patient would misread, or that could be deleted without loss?
+
+Agree if you would not change it. A preference is not a reason to change it.
+
+## Output
+
+Return JSON only:
+
+{"agree": true, "changes": []}
+
+or
+
+{"agree": false,
+ "changes": [{"quote": "the answer's words, or null for an addition",
+              "problem": "<= 25 words", "fix": "the replacement or added text"}]}

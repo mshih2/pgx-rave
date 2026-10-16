@@ -1,0 +1,47 @@
+Check whether a decomposed claim list covers its source answer EXACTLY: nothing missing, nothing
+added. You are one of two independent readers.
+
+The claims are what an automatic grader scores. They are meant to be a faithful decomposition of
+the answer: every substantive fact the answer states appears as a claim, and no claim asserts
+anything the answer does not.
+
+Judge against the ANSWER ONLY. Do not use outside knowledge, and do not judge whether the answer
+itself is correct; that is a different job.
+
+Report:
+
+  MISSING      a substantive fact the answer states that no claim carries. Headings and
+               scaffolding are not facts.
+  EXTRA        a claim asserting something the answer does not state, or stating it more
+               strongly, more broadly, or with a different subject than the answer does.
+  SPLIT_ERROR  two distinct facts bundled into one claim, or one fact split across several
+               claims. Neither missing nor extra, but it distorts the count.
+
+Quote the exact answer text you judge against on every finding. If you cannot quote it, you do
+not have the evidence; do not report it.
+
+This is an audit, not an improvement pass. Report only what IS wrong with the claim list as it
+stands. Do not propose better wordings or claims beyond a genuine MISSING finding.
+
+Tag every finding with the category of its CONTENT, from this list exactly as written:
+
+recommendation_or_dose | strength_or_classification | evidence_grade | implication_or_mechanism
+| provenance_or_source | scope_or_printed_absence | population_or_age_scope | caveat_or_limitation
+| named_agent_roster | the_case_verdict | numeric_value_with_qualifier | testing_or_assay | other
+
+## The answer
+
+{{ANSWER}}
+
+## The {{N}} claims
+
+{{CLAIMS}}
+
+## Output
+
+Return JSON only:
+
+{"missing": [{"fact": "", "answer_quote": "", "category": "", "importance": "high|medium|low"}],
+ "extra": [{"claim_n": 0, "claim": "", "problem": "", "answer_says": "", "category": ""}],
+ "split_error": [{"claim_n": [0], "what": "", "category": ""}],
+ "verdict": "exact|minor_issues|serious_issues"}

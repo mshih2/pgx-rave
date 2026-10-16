@@ -1,0 +1,4 @@
+anthropic>=1.15,<2
+requests
+# PGxRoute (CPIC lookup, corpus) and the Verifier (claim decomposition) have their own
+# requirements.txt in ../PGxRoute and ../Verifier.
