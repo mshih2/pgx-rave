@@ -22,7 +22,7 @@ A query may cover several of these, one, or none of them.
 - Queries differ in what they need: some need no CPIC content at all, some are answered by the lookup row alone, and some need guideline text beyond the row.
 - First work out which of those aspects the query covers; call that list question_facets.
 - Work out what the query asks for from original_query and question_facets together.
-- Choose the smallest-sufficient tool: the one whose Sources cover every asked item and nothing the query does not need, so no compute is wasted on unneeded retrieval.
+- Choose the smallest-sufficient tool: the one whose description covers every asked item and nothing the query does not need, so no compute is wasted on unneeded retrieval.
   - A tool missing any asked item is not sufficient, however small.
   - A tool holding more than the asked items is not a better fit — the extra retrieval wastes compute, and its extra material must still be weighed.
 - Choose exactly ONE tool.
