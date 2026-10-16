@@ -56,7 +56,7 @@ python run.py --router xgboost --questions questions.jsonl --out answers/   # ro
 - **LLM routers.** Serve Qwen3-8B (untrained) or a trained checkpoint with an OpenAI-compatible
   server and set `ROUTER_BASE_URL` / `ROUTER_MODEL`. Thinking on, temperature 0.6, top-p 0.95,
   2,048 tokens; an unparsable reply is resampled twice, then the question goes to
-  Reasoning-only. The trained checkpoints and the RL training code are not included.
+  Reasoning-only. No trained checkpoint is included; the RL training code is in `../Router-training`.
 
 ## Files
 
