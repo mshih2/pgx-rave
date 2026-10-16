@@ -1,0 +1,164 @@
+# CoVaPh GRPO Trainer Configuration
+# Merged configuration combining grpo_trainer.yaml and grpo_covaph.yaml
+# This file directly inherits from ppo_trainer and includes all GRPO and CoVaPh-specific settings
+
+hydra:
+  searchpath:
+    # Use relative path since Ray job packs working_dir to temporary location
+    # The working_dir is set to BASE_DIR in train_covaph.sh, so verl/ is relative to it
+    # This works because Ray copies the entire working_dir structure to the temp location
+    - file://verl/trainer/config
+
+defaults:
+  - ppo_trainer
+  - _self_
+
+# Ray initialization
+ray_init:
+  num_cpus: 32
+
+# Data configuration
+data:
+  # CoVaPh-specific tool config paths
+  train_tool_config_path: covaph_tools.json
+  test_tool_config_path: covaph_tools.json
+  prompt_template: qwen-base
+  # CoVaPh-specific data settings
+  train_files: ['covaph_train_selected_data.jsonl']
+  val_files: ['covaph_val_selected_data.jsonl']
+  shuffle_train_dataloader: true
+  # Batch sizes for 44 training samples and 14 validation samples
+  # train_batch_size=4: 44/4 = 11 batches per epoch
+  train_batch_size: 4
+  gen_batch_size: 32
+  val_batch_size: 2
+  max_prompt_length: 8192
+  max_response_length: 2048
+  truncation: 'left'
+  # -1=off; N>0=soft hint active for the first N global steps (each repeat is told to prefer a different tool)
+  rollout_diversity_hint_until: 3
+
+# Algorithm configuration
+algorithm:
+  adv_estimator: grpo
+  filter_groups:
+    enable: true
+    metric: seq_reward
+    max_num_gen_batches: 0
+  kl_ctrl:
+    kl_coef: 0.0001
+  use_kl_in_reward: false
+
+# Actor/Rollout/Reference configuration
+actor_rollout_ref:
+  model:
+    path: Qwen/Qwen3-8B
+    use_remove_padding: true
+    enable_gradient_checkpointing: true
+  actor:
+    strategy: fsdp
+    optim:
+      lr: 1e-6          # Reduced by half from 1e-6 to prevent training instability
+      clip_grad_norm: 1.0 # required
+      lr_warmup_steps: 0
+    # PPO mini batch size: should be <= train_batch_size
+    # For 44 samples with train_batch_size=4, using 4
+    ppo_mini_batch_size: 4
+    clip_ratio_low: 0.2
+    clip_ratio_high: 0.28
+    clip_ratio_c: 10.0
+    ppo_epochs: 1
+    use_dynamic_bsz: true
+    ppo_max_token_len_per_gpu: 8192
+    entropy_coeff: 0
+    use_kl_loss: true
+    kl_loss_coef: 0.001
+    kl_loss_type: kl
+    correct_sample_advantage_boost_value: 0.1
+    # Minimum reward standard deviation threshold for sample filtering
+    # Only samples with reward std > this threshold will be selected for training
+    # Lower values allow more samples, higher values require more variance
+    min_reward_std_threshold: 0.01
+    fsdp_config:
+      param_offload: false
+      optimizer_offload: false
+  rollout:
+    name: vllm
+    n_agent: 4
+    tensor_model_parallel_size: 2
+    # Sampling: higher temperature/top_p/top_k increase tool-choice diversity across rollouts
+    temperature: 1.0
+    top_p: 0.95
+    top_k: 3
+    gpu_memory_utilization: 0.75
+    n: 1
+    enforce_eager: false
+    free_cache_engine: false
+    enable_chunked_prefill: false
+    log_prob_max_token_len_per_gpu: 8192
+    val_kwargs:
+      temperature: 0.6
+      n: 4
+      do_sample: true
+  ref:
+    fsdp_config:
+      param_offload: true
+    log_prob_max_token_len_per_gpu: 8192
+    # Keep in sync with actor (avoid ref=2 while actor=1 → extra SP / OOM in compute_ref_log_prob)
+    ulysses_sequence_parallel_size: ${actor_rollout_ref.actor.ulysses_sequence_parallel_size}
+
+# Critic configuration
+critic:
+  strategy: fsdp
+  optim:
+    lr: 5e-7  # Reduced by half from 5e-6 to prevent training instability
+    clip_grad_norm: 1.0 # required
+    lr_warmup_steps: 0
+
+# Reward model (disabled, using CoVaPh reward manager)
+reward_model:
+  enable: false
+  # Note: reward_manager and overlong_buffer from ppo_trainer are ignored since enable=false
+
+# Reward manager (CoVaPh-specific)
+reward_manager:
+  type: covaph
+  max_concurrency: 64
+  use_remote_reward: false
+
+# Stop penalty
+stop_properly_penalty:
+  penalty_coef: 0.1
+
+# Trainer configuration
+trainer:
+  device: cuda
+  n_gpus_per_node: 2
+  nnodes: 1
+  critic_warmup: 0
+  logger: ['console', 'wandb']
+  project_name: covaph_orchestrator
+  experiment_name: tool_selection
+  val_before_train: false
+  log_val_generations: 8
+  # Save checkpoint every 5 global steps and at the last step
+  # The code already handles last step saving via is_last_step condition
+  save_freq: 5
+  test_freq: 1000000
+  total_epochs: 1
+  # Total training steps (overrides automatic calculation: len(dataloader) * total_epochs)
+  # For 44 samples: 44/4 = 11 batches per epoch, 1 epoch = 11 steps
+  # If None, will be calculated as len(train_dataloader) * total_epochs
+  total_training_steps: 11
+  default_local_dir: checkpoints/base
+  # Resume mode: "auto", "disable", or "resume_path"
+  # "auto": resume from last checkpoint if available
+  # "disable": start from scratch (default)
+  # "resume_path": resume from a user-defined path (requires resume_from_path to be set)
+  resume_mode: disable
+  # Path to resume training from (only used when resume_mode is "resume_path")
+  resume_from_path: null
+
+# Max turns for multi-turn dialogue
+max_turns: 1
+

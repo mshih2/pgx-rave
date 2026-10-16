@@ -1,9 +1,12 @@
 """LLM routers: Qwen3-8B reads a prompt that describes each pipeline as a tool and names one.
 
-  fg  facet-guided: the prompt lists six fixed clinical facets (prompts/routers/fg_system.txt)
+  fg  facet-guided: the prompt lists six fixed clinical facets (prompts/routers/fg_system.txt);
+      the three tools are listed in the order tool_a, tool_b, tool_c
   sf  self-faceted: the model lists in its own words what the question asks for
       (prompts/routers/sf_system.txt); the three tools are listed in an order drawn per question
       from random.Random("v17:" + question), as in training
+
+Both templates take the tool descriptions from prompts/routers/tool_lines.json at {tool_list}.
 
 The same code serves the untrained router (ROUTER_MODEL = Qwen/Qwen3-8B) and a GRPO-trained one
 (ROUTER_MODEL = the served name of its checkpoint); only the weights differ. Checkpoints are not
@@ -38,15 +41,14 @@ def _read(name):
 
 
 def system_prompt(prompt, question):
-    if prompt == "fg":
-        return _read("fg_system.txt").rstrip("\n")
+    if prompt not in PROMPTS:
+        raise ValueError(f"prompt must be one of {PROMPTS}, got {prompt!r}")
+    lines = json.loads(_read("tool_lines.json"))
+    order = ["tool_a", "tool_b", "tool_c"]
     if prompt == "sf":
-        lines = json.loads(_read("sf_tool_lines.json"))
-        order = ["tool_a", "tool_b", "tool_c"]
         random.Random(f"v17:{question}").shuffle(order)
-        return _read("sf_system.txt").rstrip("\n").replace(
-            "{tool_list}", "\n".join(lines[t] for t in order))
-    raise ValueError(f"prompt must be one of {PROMPTS}, got {prompt!r}")
+    return _read(f"{prompt}_system.txt").rstrip("\n").replace(
+        "{tool_list}", "\n".join(lines[t] for t in order))
 
 
 def build_messages(prompt, question):

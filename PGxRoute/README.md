@@ -93,7 +93,7 @@ tools/                     offline bank-preparation tools (never run at answer t
 | `pgxroute/routers/rl/llm_router.py` | LLM router: builds the FG or SF prompt, samples, parses the JSON after `</think>`, resamples |
 | `pgxroute/steps/citation.py` | Strips model-written citation identifiers and appends the CPIC guideline link of the question's first drug, read from the table |
 | `run.py` | Command-line runner |
-| `prompts/` | The six pipeline prompts, and `prompts/routers/` with the FG and SF router prompts |
+| `prompts/` | The six pipeline prompts, and `prompts/routers/` with the FG and SF router templates and `tool_lines.json`, the tool descriptions both templates fill in at `{tool_list}` |
 | `data/cpic_lookup.json` | The CPIC lookup table: every gene, allele, drug and phenotype name of the CPIC API, with the aliases CPIC prints for them, each gene's reference allele and chromosome, the gene groups CPIC keys together, and each drug's guideline |
 | `tools/audit_question_names.py` | Offline check of a question bank against the table (reads ground truth; never used at answer time) |
 

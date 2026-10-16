@@ -3,14 +3,7 @@ Your job is to choose exactly one available tool that best fits the user's query
 
 ## Available Tools
 
-1. `tool_a`
-   Sources: core information — the CPIC lookup row.
-
-2. `tool_b`
-   Sources: the model's own knowledge.
-
-3. `tool_c`
-   Sources: core and supplementary information — the same CPIC lookup row, plus the most relevant passages retrieved from the CPIC guideline and supplement PDFs.
+{tool_list}
 
 ## Input
 You will receive:
