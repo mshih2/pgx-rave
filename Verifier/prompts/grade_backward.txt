@@ -1,0 +1,99 @@
+PATIENT QUESTION CONTEXT (the question that both the response and the ground truth
+are answering — for reference only, to resolve pronouns and implicit drug/gene subjects):
+{question_text}
+
+---
+
+You are a pharmacogenomics evaluator. You are given ONE claim taken from the GROUND-TRUTH
+(GT) reference answer, and a numbered list of RESPONSE claims taken from a clinical
+response. Decide how fully the GT CLAIM is COVERED BY THE RESPONSE CLAIMS and return
+exactly one of three labels.
+
+Judge ONLY against the response claims. Do NOT use outside pharmacogenetic knowledge to
+complete or excuse the response — a GT claim counts as covered only insofar as the
+response states it.
+
+LABELS
+
+1. "covered" — the GT CLAIM is directly stated or logically entailed by one or more
+   response claims, WITH every decision-driving component present (the action /
+   direction, any dose / number / range, the strength grade, the gating condition, the
+   named agent, the target value, the phenotype label). Paraphrase and different wording
+   are fine.
+   REGISTER IS NOT CONTENT: a lay word and its clinical term for the same thing are the
+   same fact — <plain-English symptom name> and <the medical term for that symptom>
+   match, in either direction. Do not downgrade for one side using patient wording and
+   the other using terminology. The same holds for a symptom named by its everyday
+   description versus its diagnostic label.
+
+2. "partial" — the response states the CORE direction or main point of the GT CLAIM but
+   OMITS a decision-driving component the GT specifies, or gives a weaker / less-specific
+   version, with NO contradiction. (For example: right action but no dose / number /
+   range; drops the strength grade; drops a gating condition; names a monitoring
+   parameter but not its target; names a DIFFERENT agent for the same role; covers only
+   one gene / route of a paired GT claim.) Use partial only when a MATERIAL piece is
+   missing, not for merely shorter wording.
+   EVIDENCE PRECISION: when the GT claim carries a confidence interval, a sample size, or the study design behind a figure, and the response gives only the point estimate, that is PARTIAL, not full support -- matching the figure alone is not enough, because how well established the figure is has been dropped.
+
+3. "missing" — no response claim states this GT fact at all, or a response claim
+   contradicts it. In this three-label scheme a GT claim the response never states is
+   "missing" EVEN IF the response says other true things instead.
+
+CITATION / SOURCE-ATTRIBUTION claims — SPECIAL RULE (overrides the general label definitions).
+A claim whose content IS an attribution of a recommendation to a source — e.g. "The <drug>
+recommendations follow the CPIC Guideline for <GENE> and <DRUG>", a "Source: ..." block, or an
+attribution to FDA / DPWG / PharmGKB / EMA — is judged on SOURCE IDENTITY ONLY: the issuing body
+plus the gene-drug topic.
+IGNORE ENTIRELY: year, PMID, PMCID, PharmGKB PA id, NCBI Bookshelf NBK id, DOI, author names,
+table / figure numbers, URLs. Their presence, absence, or mismatch must NOT change the label.
+Naming the right issuing body for the right gene-drug topic is FULL credit — never downgrade it
+just because a bibliographic identifier is missing or differently worded.
+A GT source claim is "covered" when the response attributes to the same issuing body for the same gene-drug topic. / It is "missing" only if the response gives no source attribution at all, or names a different issuing body.
+CONTENT-WITH-A-SOURCE is NOT a citation claim: a claim that carries clinical CONTENT with a source
+attached (e.g. "the FDA label for <DRUG> warns of a boxed risk in <PHENOTYPE> patients", "<study>
+reported a response rate of <N>%") is judged as an ORDINARY CONTENT claim — the CONTENT must be covered; the
+attribution is incidental.
+
+DECISION ORDER: (1) fully stated by the response -> covered. (2) core stated but a
+decision-driving piece is missing or softened -> partial. (3) otherwise -> missing.
+
+"covering_response_indices": the 0-based response-claim index(es) that state or partially
+state the GT CLAIM; empty for missing.
+
+EXAMPLES
+
+Example RESPONSE set A (vexanides / MT-ZQR1 increased-risk variant):
+[0] The patient carries the MT-ZQR1 m.2071A>G increased-risk variant.
+[1] Vexanides should be avoided in this patient.
+[2] If a vexanide is used, it should be given for the shortest possible period with therapeutic drug monitoring and ophthalmologic review.
+
+GT CLAIM: "MT-ZQR1 m.2071A>G corresponds to increased risk of vexanide-induced retinal injury."
+-> {"label":"covered","covering_response_indices":[0],"rationale":"Response [0] states the same variant and risk status."}
+GT CLAIM: "Vexanides should be avoided in a carrier of an MT-ZQR1 increased-risk variant unless the risk of irreversible vision loss is outweighed by the severity of the underlying condition and no effective alternative exists (CPIC strength: Strong)."
+-> {"label":"partial","covering_response_indices":[1],"rationale":"Response [1] has the same action but omits the CPIC strength grade and the gating exception."}
+GT CLAIM: "If a vexanide is used in a carrier of an MT-ZQR1 increased-risk variant, it should be given for the shortest possible period with therapeutic drug monitoring and ophthalmologic review."
+-> {"label":"covered","covering_response_indices":[2],"rationale":"Response [2] states the same conditional precautions."}
+GT CLAIM: "MT-ZQR1 variants such as m.2071A>G more closely resemble the microbial ribosomal target of the vexanides, which underlies the increased risk of vexanide-induced retinal injury."
+-> {"label":"missing","covering_response_indices":[],"rationale":"No response claim states the underlying mechanism."}
+
+Example RESPONSE set B (torvexin / TQR5 poor metabolizer):
+[0] Reduce the torvexin starting dose in this TQR5 poor metabolizer.
+[1] Monitor for severe neutropenia and diarrhea.
+
+GT CLAIM: "Torvexin should be started at a reduced dose (about one dose level, ~70% of standard) in a TQR5 poor metabolizer (DPWG guideline)."
+-> {"label":"partial","covering_response_indices":[0],"rationale":"Correct reduce-dose direction but the response drops the ~70% figure and the DPWG source."}
+GT CLAIM: "TQR5 *22/*22 corresponds to reduced TQR5 activity (poor metabolizer)."
+-> {"label":"missing","covering_response_indices":[],"rationale":"The response never states the genotype-to-phenotype mapping."}
+
+OUTPUT — return ONLY this JSON object:
+{"label":"covered"|"partial"|"missing","covering_response_indices":[<0-based indices, or empty>],"rationale":"<one short sentence>"}
+
+The RESPONSE_CLAIMS list below is 0-indexed.
+
+---
+
+GT CLAIM:
+{claim_text}
+
+RESPONSE_CLAIMS:
+{numbered_response_claims}

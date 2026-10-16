@@ -1,0 +1,58 @@
+You deduplicate a list of atomic claims decomposed from one pharmacogenomic answer by two independent streams. Keep every distinct fact once. A survivor is copied verbatim from the input; nothing is rewritten, paraphrased or merged into new wording.
+
+SAME ASSERTION. Two claims are one fact when they have the same subject and say the same thing about it: the same directive, outcome, relation or value, in the same direction, for the same drug, phenotype or population, artifact or issuing body, and scope. Wording, voice, word order, an abbreviation (PM, Poor Metabolizer) and a synonym (avoid, not recommended, recommends against) do not change an assertion. A claim that mentions the content of another claim while asserting something else about it (what a table grades, what a label prints, what follows from a mechanism, what the case does with a clause) makes a different assertion: keep both, emit no group.
+
+SURVIVOR. Among claims making the same assertion, the survivor is the member that carries everything the others carry: a condition, a qualifier, a source name, a strength label, a number, or a wider drug name ("(es)florabine" covers "esflorabine"). Where no member carries everything the others carry, keep them all and emit no group. Between members carrying the same content, the one with more citation identifiers (DOI, PMID, PMCID) survives, then the lower index. Position does not choose the survivor.
+
+PROCEDURE. The two streams decomposed the same answer independently. The lists are not aligned: the position of a claim says nothing about which claim, if any, makes the same assertion. Take each stream-2 claim in turn and read it against every stream-1 claim before deciding; then read each stream for duplicates of its own. A claim with no same-assertion partner survives unchanged.
+
+RESTATEMENTS. A claim that restates two or more facts each stated by another claim (a summary, a FINAL ANSWER line, a sentence bundling a mechanism with its consequence) is absorbed and is never a survivor, whatever else it carries. Absorb it into the avoid or contraindication claim it restates, otherwise into the first fact it restates. It never merges the facts it restates; those stay separate survivors. A claim that applies a clause to the case (it names a case attribute: age, weeks on therapy, dose already given, a result on file) resolves one question; it is not a restatement and survives.
+
+CITATIONS. A claim is citation-only when removing the source name leaves nothing. A content claim that names the same source absorbs it; where no content claim names that source, the citation-only claim survives.
+
+TWO FACTS, NOT ONE. Keep both, emit no group:
+- each alternative agent: one claim per agent;
+- "avoid X" and "if X is unavoidable, <dose or monitoring>";
+- a standard dose and an adjusted dose;
+- a mechanism and the consequence it drives;
+- a raised concentration and the adverse-effect risk it drives;
+- opposite directions drawn from one source sentence;
+- one assertion printed by different artifacts or issuing bodies, and this guideline's own recommendation;
+- a class rule and the same rule for one named drug;
+- a risk-category label and the directive built on it;
+- a finding and the grade an evidence table assigns to it;
+- the scope of a printed clause and the verdict applying it to the case.
+
+OUTPUT. Return only this JSON object:
+{"deduplicated_claims": ["[<index>] <survivor verbatim>", ...], "absorbed_into": {"<absorbed index>": <survivor index>, ...}}
+- Indices are the bracketed numbers before each INPUT claim.
+- deduplicated_claims: the survivor lines, copied verbatim with their bracketed index (whitespace trimming only), in input order.
+- absorbed_into: one entry per absorbed claim: its index as key, its survivor's index as value.
+- Index invariant: every input index appears exactly once, either in a survivor's bracket or as one absorbed_into key; no index outside the input range.
+
+EXAMPLE (not merged: 8 and 9, mechanism and consequence; 9 and 10, a finding and the grade a table assigns it; 2 and 3, one claim per agent; 1 and 14, avoid and if-unavoidable; 5 and 6, clause scope and applied verdict. 16 restates 1, 2, 3 and 14 and is absorbed into 1 only.)
+INPUT (indices 0 to 7 = stream 1; the rest = stream 2):
+[0] ZZX1 *9/*9 corresponds to Poor Metabolizer.
+[1] Florabine should be avoided in a ZZX1 Poor Metabolizer (CPIC strength: Moderate).
+[2] Gribozole is named as an alternative to florabine in a ZZX1 Poor Metabolizer.
+[3] Torvexin is named as an alternative to florabine in a ZZX1 Poor Metabolizer.
+[4] If florabine must be used in a ZZX1 Poor Metabolizer, it should be initiated at 50% of the standard dose with therapeutic drug monitoring (CPIC strength: Moderate).
+[5] The florabine dose-increase clause is written for a patient who has completed 12 weeks without response.
+[6] In a ZZX1 Poor Metabolizer 8 weeks into florabine with no response, the 12-week dose-increase clause is not met.
+[7] ZZX1 Poor Metabolizers had 95% higher exposure to esflorabine than ZZX1 Normal Metabolizers.
+[8] Florabine is metabolized by ZZX1.
+[9] A ZZX1 Poor Metabolizer has increased florabine exposure.
+[10] The supplement's evidence table grades the finding that ZZX1 Poor Metabolizers have increased florabine exposure High.
+[11] ZZX1 Poor Metabolizers had 95% higher exposure to (es)florabine than ZZX1 Normal Metabolizers.
+[12] Florabine is not recommended in a ZZX1 Poor Metabolizer.
+[13] The florabine dose-increase clause is written for a patient who has completed 12 weeks without response.
+[14] If florabine must be used in a ZZX1 Poor Metabolizer, it should be initiated at 50% of the standard dose with therapeutic drug monitoring of trough concentrations (CPIC strength: Moderate).
+[15] ZZX1 *9/*9 (two no-function alleles) corresponds to Poor Metabolizer.
+[16] In summary, avoid florabine, choose gribozole or torvexin, and if florabine is essential start at 50% of the standard dose with therapeutic drug monitoring (all CPIC Moderate).
+OUTPUT:
+{"deduplicated_claims": ["[1] Florabine should be avoided in a ZZX1 Poor Metabolizer (CPIC strength: Moderate).", "[2] Gribozole is named as an alternative to florabine in a ZZX1 Poor Metabolizer.", "[3] Torvexin is named as an alternative to florabine in a ZZX1 Poor Metabolizer.", "[5] The florabine dose-increase clause is written for a patient who has completed 12 weeks without response.", "[6] In a ZZX1 Poor Metabolizer 8 weeks into florabine with no response, the 12-week dose-increase clause is not met.", "[8] Florabine is metabolized by ZZX1.", "[9] A ZZX1 Poor Metabolizer has increased florabine exposure.", "[10] The supplement's evidence table grades the finding that ZZX1 Poor Metabolizers have increased florabine exposure High.", "[11] ZZX1 Poor Metabolizers had 95% higher exposure to (es)florabine than ZZX1 Normal Metabolizers.", "[14] If florabine must be used in a ZZX1 Poor Metabolizer, it should be initiated at 50% of the standard dose with therapeutic drug monitoring of trough concentrations (CPIC strength: Moderate).", "[15] ZZX1 *9/*9 (two no-function alleles) corresponds to Poor Metabolizer."], "absorbed_into": {"0": 15, "4": 14, "7": 11, "12": 1, "13": 5, "16": 1}}
+
+NOW DEDUP
+INPUT (indices 0 to {stream1_last} = stream 1; the rest = stream 2):
+{claims}
+OUTPUT:
