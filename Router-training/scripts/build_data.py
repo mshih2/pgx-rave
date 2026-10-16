@@ -1,6 +1,6 @@
 """Build the training files for the LLM router.
 
-  python build_data.py --bank bank.jsonl --prompt fg --out data/fg
+  python scripts/build_data.py --bank bank.jsonl --prompt fg --out data/fg
 
 bank.jsonl: one {"question_id", "question", "gt_claims": [...]} per line, optionally with "fold"
 (0 or 1), "tier" (common / intermediate / hard), "category" and "ground_truth" (GT text).
@@ -13,7 +13,7 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "PGxRoute"))
 
 from pgxroute.routers.rl.llm_router import PROMPTS, build_messages  # noqa: E402

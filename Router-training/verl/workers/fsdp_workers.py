@@ -128,7 +128,7 @@ class ActorRolloutRefWorker(Worker):
         self.config = config
         self.role = role  # Set role early so it can be used in subsequent code
         import time
-        from run_log import setup_run_log
+        from verl.utils.run_log import setup_run_log
 
         ts = time.strftime("%Y%m%d-%H%M%S")
         rank_str = os.environ.get("RANK", "0")
@@ -881,7 +881,7 @@ class CriticWorker(Worker):
         super().__init__()
         import time
         import torch.distributed
-        from run_log import setup_run_log
+        from verl.utils.run_log import setup_run_log
 
         ts = time.strftime("%Y%m%d-%H%M%S")
         rank_str = os.environ.get("RANK", "0")

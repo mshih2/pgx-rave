@@ -9,7 +9,7 @@ compute_cache_baseline_rewards expects:
 
 The F-score uses REWARD_BETA (default 1.0) and the extra-claim weight REWARD_EXTRA_WEIGHT
 (default 0.2). GT claims come from GT_CLAIMS_FILE, a JSON object {index: [claim, ...]} written by
-build_data.py. If any pipeline or scoring of a question fails, all its tools get F = 0 and equal
+scripts/build_data.py. If any pipeline or scoring of a question fails, all its tools get F = 0 and equal
 cost, so its rollouts get a zero reward and the failure is logged.
 """
 import json
@@ -19,12 +19,12 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-_REPO = Path(os.environ.get("PGX_REPO_ROOT") or Path(__file__).resolve().parents[1])
+_REPO = Path(os.environ.get("PGX_REPO_ROOT") or Path(__file__).resolve().parents[2])
 for _sub in ("PGxRoute", "Verifier"):
     if str(_REPO / _sub) not in sys.path:
         sys.path.insert(0, str(_REPO / _sub))
 
-import covaph_env                                   # noqa: E402
+from router_reward import covaph_env                # noqa: E402
 from pgxverifier.steps.score import f_beta          # noqa: E402
 from pgxverifier.verifier import Verifier           # noqa: E402
 

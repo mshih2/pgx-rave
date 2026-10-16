@@ -96,7 +96,7 @@ class ActorRolloutRefWorker(MegatronWorker):
     def __init__(self, config: DictConfig, role: str):
         super().__init__()
         self.config = config
-        from run_log import setup_run_log
+        from verl.utils.run_log import setup_run_log
 
         ts = time.strftime("%Y%m%d-%H%M%S")
         rank_str = os.environ.get("RANK", "0")
@@ -634,7 +634,7 @@ class CriticWorker(MegatronWorker):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        from run_log import setup_run_log
+        from verl.utils.run_log import setup_run_log
 
         ts = time.strftime("%Y%m%d-%H%M%S")
         rank_str = os.environ.get("RANK", "0")

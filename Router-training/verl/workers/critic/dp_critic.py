@@ -76,6 +76,19 @@ if is_cuda_available:
         logger = logging.getLogger(__file__)
         logger.warning(f"Failed to import flash_attn.bert_padding: {e}. Flash attention optimizations will be disabled.")
         _flash_attn_available = False
+elif is_npu_available:
+    try:
+        from transformers.integrations.npu_flash_attention import (index_first_axis, pad_input,
+                                                                   rearrange, unpad_input)
+        _index_first_axis = index_first_axis
+        _pad_input = pad_input
+        _rearrange = rearrange
+        _unpad_input = unpad_input
+        _flash_attn_available = True
+    except (ImportError, OSError, AttributeError) as e:
+        import logging
+        logging.getLogger(__file__).warning(f"Failed to import npu_flash_attention: {e}. Flash attention optimizations will be disabled.")
+        _flash_attn_available = False
 
 # Fallback implementations if flash_attn is not available
 if not _flash_attn_available:
@@ -117,9 +130,6 @@ index_first_axis = _index_first_axis
 pad_input = _pad_input
 rearrange = _rearrange
 unpad_input = _unpad_input
-elif is_npu_available:
-    from transformers.integrations.npu_flash_attention import (
-        index_first_axis, pad_input, rearrange, unpad_input)
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
