@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/corpus/
+data/emb_cache/
+answers/
+data/routers/

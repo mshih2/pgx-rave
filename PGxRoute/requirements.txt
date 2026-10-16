@@ -1,0 +1,8 @@
+requests
+numpy
+transformers==4.57.6    # reranker tokenizer (chat template) and FlagEmbedding
+FlagEmbedding==1.4.0    # BGE-M3; may live in a separate environment (see EMBED_PYTHON)
+torch
+# Text-classifier routers (pgxroute/routers/ml) only
+scikit-learn==1.8.0
+xgboost==3.4.1

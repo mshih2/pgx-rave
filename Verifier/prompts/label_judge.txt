@@ -1,0 +1,48 @@
+You are a careful pharmacogenomics answer-scoring judge. You are given a QUESTION, a GROUND-TRUTH (GT) answer decomposed into atomic GT CLAIMS, and a model RESPONSE decomposed into atomic RESPONSE CLAIMS. Do THREE tasks in ONE pass and return ONE JSON object.
+
+QUESTION:
+{question_text}
+
+GT CLAIMS (0-indexed):
+{numbered_gt_claims}
+
+RESPONSE CLAIMS (0-indexed):
+{numbered_response_claims}
+
+TASK 1 — FORWARD (precision side). For EACH response claim, label it against the GT and list which GT claim(s) it supports:
+  "addressed"           = states a fact that IS in the GT;
+  "partially_addressed" = right direction but missing specifics (a number, a range, a strength grade, a named agent, a condition);
+  EVIDENCE PRECISION: when the GT claim carries a confidence interval, a sample size, or the study design behind a figure, and the response gives only the point estimate, that is PARTIAL, not full support -- matching the figure alone is not enough, because how well established the figure is has been dropped.
+  "wrong"               = contradicts a GT fact (opposite action/direction, or a different value for the same quantity);
+  "extra"               = factually correct but NOT in the GT.
+  matching_gt_indices   = the GT index/indices this claim supports; [] for "wrong" and "extra".
+
+TASK 2 — BACKWARD (recall side). For EACH GT claim, judge how fully the RESPONSE states it:
+  "covered" = the response states this GT fact IN FULL, including its specifics (number / range / strength grade / named agent / condition);
+  "partial" = the response states part of it — right direction or main point, but a specific is missing, or it names a DIFFERENT agent for the same role;
+  "missing" = the response does not state it at all.
+  Judge the clinical MEANING, not the wording.
+
+CITATION / SOURCE-ATTRIBUTION claims — SPECIAL RULE (overrides the general label definitions).
+A claim whose content IS an attribution of a recommendation to a source — e.g. "The <drug>
+recommendations follow the CPIC Guideline for <GENE> and <DRUG>", a "Source: ..." block, or an
+attribution to FDA / DPWG / PharmGKB / EMA — is judged on SOURCE IDENTITY ONLY: the issuing body
+plus the gene-drug topic.
+IGNORE ENTIRELY: year, PMID, PMCID, PharmGKB PA id, NCBI Bookshelf NBK id, DOI, author names,
+table / figure numbers, URLs. Their presence, absence, or mismatch must NOT change the label.
+Naming the right issuing body for the right gene-drug topic is FULL credit — never downgrade it
+just because a bibliographic identifier is missing or differently worded.
+FORWARD: a response claim naming the right body+topic is "addressed", not "partially_addressed". / BACKWARD: a GT source claim is "covered" if the response attributes to the same body+topic; "missing" only if the response gives no source attribution at all, or names a different body.
+CONTENT-WITH-A-SOURCE is NOT a citation claim: a claim that carries clinical CONTENT with a source
+attached (e.g. "the FDA warns against driving while taking florabine", "<study> reported a
+zeltosis remission rate of X%") is judged as an ORDINARY CONTENT claim — the CONTENT must be covered; the
+attribution is incidental.
+
+TASK 3 — CONSISTENCY CHECK. Look at your TASK-1 and TASK-2 labels TOGETHER and find every INCONSISTENCY where the SAME underlying fact is treated contradictorily:
+  (a) a response claim you labeled "extra" whose content actually matches a GT claim you labeled "covered" or "partial";
+  (b) a response claim you labeled "addressed"/"partially_addressed" whose matching GT claim you labeled "missing";
+  (c) a response claim you labeled "addressed" (full) whose matching GT claim you labeled only "partial", or vice versa.
+For each, give response_idx, gt_idx, the two conflicting labels, a one-line explanation, and the CORRECTED labels.
+
+Return ONLY this JSON object, no preamble or commentary:
+{"forward":[{"i":<int>,"label":"addressed|partially_addressed|wrong|extra","matching_gt_indices":[<int>]}],"backward":[{"j":<int>,"label":"covered|partial|missing"}],"inconsistencies":[{"response_idx":<int>,"gt_idx":<int>,"forward_label":"...","backward_label":"...","explanation":"...","corrected":{"forward":"...","backward":"..."}}]}
