@@ -1,0 +1,16 @@
+Write the reference answer to an everyday medication question, for use as scoring ground truth.
+
+{{PRINCIPLES}}
+
+## The question
+
+{{QUESTION}}
+
+## How to write it
+
+Answer what is asked, for a general adult patient, consistent with standard drug information.
+Give what a pharmacist would consider essential to answer it safely: the direct answer first,
+then any caution that changes what the patient does. Two to five sentences; plain words; no
+preamble, no closing summary, no advice to "ask your doctor" unless it is the essential point.
+
+Write the answer now. Nothing before it, nothing after it.

@@ -1,0 +1,28 @@
+A reference answer to a clinical pharmacogenomic question was reviewed by two independent
+readers, and a settler decided which of their findings to act on. Apply those changes.
+
+{{PRINCIPLES}}
+
+{{MATERIAL}}
+
+## The answer as it stands
+
+```text
+{{ANSWER}}
+```
+
+## The settled changes
+
+```json
+{{CHANGES}}
+```
+
+## What to change
+
+Apply the settled changes and NOTHING else. Every other sentence stays exactly as it is: same
+wording, same order, same attributions. A reader comparing the two versions should see only the
+changes listed. A change that restores dropped words puts them where the answer already makes
+that claim; a change that deletes, deletes exactly what it names. Every rule that governed the
+original answer still governs.
+
+Write the revised answer now. Nothing before it, nothing after it.

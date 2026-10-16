@@ -1,0 +1,40 @@
+Review one new everyday medication question and its reference answer. You are one of two
+independent readers; the other reads exactly what you read and neither sees the other's review.
+
+{{PRINCIPLES}}
+
+{{MATERIAL}}
+
+## The reference answer
+
+```text
+{{ANSWER}}
+```
+
+## Judge these, and only these
+
+**1. The question.** Is it a clear, ordinary medication question with no pharmacogenomic content?
+
+**2. Accuracy.** Is every statement correct for a general adult patient, consistent with
+standard drug information? Name anything wrong, outdated or stated more strongly or broadly than
+it should be.
+
+**3. Coverage.** Does the answer give what a pharmacist would consider essential to answer this
+question safely? Name only omissions that would change what the patient does.
+
+**4. Concision and register.** Anything that could be deleted without losing something the
+patient would act on; anything a patient would misread.
+
+Report only what you would change. Every finding quotes the answer's (or the question's) words.
+
+## Output
+
+Return JSON only:
+
+{"verdicts": {"question": "pass|fail", "accuracy": "pass|fail", "coverage": "pass|fail",
+              "concision": "pass|fail"},
+ "findings": [{"axis": "question|accuracy|coverage|concision",
+               "quote": "the answer's or question's words",
+               "change": "the change you would make, <= 30 words",
+               "why": "<= 25 words"}],
+ "notes": ["anything for the human check that is not a finding"]}

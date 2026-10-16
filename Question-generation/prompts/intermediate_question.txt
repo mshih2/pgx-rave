@@ -1,0 +1,47 @@
+Write one intermediate pharmacogenomic evaluation question.
+
+An intermediate question is answered completely by one CPIC recommendation lookup: the patient's
+genotype, sent to the lookup, returns the row below, and that row holds everything the question
+asks for. It must not need guideline or supplement text beyond the row.
+
+{{PRINCIPLES}}
+
+## Clinical question facets
+
+A question raises one or more of these facets:
+
+{{FACETS}}
+
+## Pharmacist example pairs
+
+Model what the question states and asks, its clinical register and its length on these. Do not
+reuse their gene-drug pairs or their wording.
+
+{{EXAMPLES}}
+
+## The CPIC recommendation row
+
+{{CANDIDATE}}
+
+## What to write
+
+A vignette that states age, the clinical situation, the genotype as a test report gives it (use
+one of the example diplotypes; for a row keyed on two genes, give both genes' results), the drug
+and the population, and asks for what this row answers: the recommendation and the facets the row
+carries (implication, strength, dosing, alternatives, comments). Name the gene, alleles and drug
+exactly as CPIC writes them.
+
+If the row cannot support a sensible clinical question, say so.
+
+## Output
+
+Return JSON only:
+
+{"question": "...",
+ "asks": ["1. ...", "2. ..."],
+ "facets": ["facet names the question raises"],
+ "answer_direction": "change | no_change | mixed",
+ "population": "...",
+ "skip": null}
+
+or, when no question fits: {"skip": "why, in one sentence"}

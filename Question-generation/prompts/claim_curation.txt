@@ -1,0 +1,64 @@
+Curate the ground-truth claims of one evaluation question. This is round {{ROUND}}. The claims
+were decomposed automatically from the reference answer; an automatic grader will score answers
+against them, so a wrong, missing or merged claim mis-scores every answer.
+
+## The plan
+
+Each round, check the claim list against the reference answer and its sources, and return the
+edits that make it right. Return no edits when the list is right; that ends the curation.
+
+1. **Faithful to the answer.** Every claim states something the answer states, with the same
+   subject, scope, strength and attribution. A claim that is true of CPIC but the answer never
+   made is a defect: it gives the grader credit for something the answer did not say.
+2. **Complete.** Every substantive fact the answer states is carried by a claim.
+3. **Grounded.** Every claim is supported by the sources below. A claim the sources do not
+   support, or support only with a different scope, population or attribution, is a defect in
+   the answer as well: rewrite the claim to what the sources print and note it for the human
+   check. Where the CPIC lookup and a guideline passage differ, the lookup is current.
+   An everyday medication question has no CPIC sources; check its claims against the answer.
+4. **Atomic.** One checkable fact per claim: one recommendation for one phenotype, one dosing
+   caveat, one figure with its qualifier. Split a claim that bundles two facts; merge claims that
+   split one fact.
+5. **Self-contained.** A claim names its own gene, drug and phenotype, so it can be checked on its
+   own. A printed list of options keeps CPIC's printing verb ("CPIC names X, Y and Z as ...").
+6. **Absences.** A claim that CPIC does not address something stands only if no source addresses
+   it; a reason for a gap stands only if a source prints it.
+7. **No duplicates.** Two claims stating the same fact become one.
+
+Edit as little as possible. Do not reword a claim that is right.
+
+## Findings both coverage readers made (round 1 only)
+
+{{FINDINGS}}
+
+Act on each of these unless the answer or the sources show it is wrong.
+
+## Sources
+
+{{MATERIAL}}
+
+## The reference answer
+
+{{ANSWER}}
+
+## The {{N}} claims
+
+{{CLAIMS}}
+
+## Output
+
+Return JSON only. Claim numbers refer to the list above.
+
+{"edits": [{"op": "drop|rewrite|split|merge|add",
+            "claims": [0],
+            "new": ["replacement claim text, one entry per resulting claim"],
+            "why": "<= 25 words",
+            "quote": "the answer's or source's words it rests on"}],
+ "notes_for_human_check": ["..."]}
+
+- drop: "claims" lists the claims to remove; "new" is empty.
+- rewrite: one claim in "claims", one entry in "new".
+- split: one claim in "claims", two or more entries in "new".
+- merge: two or more claims in "claims", one entry in "new".
+- add: "claims" holds the claim the new ones follow ([] to put them first).
+- A claim may appear in only one edit per round.

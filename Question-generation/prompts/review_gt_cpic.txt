@@ -1,0 +1,60 @@
+Review one new pharmacogenomic evaluation question and its reference answer against the CPIC
+material the answer was built from. You are one of two independent readers; the other reads
+exactly what you read and neither sees the other's review.
+
+{{PRINCIPLES}}
+
+{{MATERIAL}}
+
+## The reference answer
+
+```text
+{{ANSWER}}
+```
+
+## Judge these, and only these
+
+**1. The question.** Does it state the gene, genotype, drug, population and clinical context? Is
+every detail doing a job? Is each ask answerable from the material above? Is it clinically
+coherent?
+
+**2. Coverage.** Does the answer give everything the question asks for that the material prints?
+A finding names the ask and quotes the span that should have answered it.
+
+**3. Fidelity.** Take the answer sentence by sentence and find the span that carries each claim.
+- *unsupported*: no span carries it (including a number the material does not print, a converted
+  unit, a value carried across a drug, phenotype, population or column);
+- *distorted*: a span exists but the answer changes it (strength, hedge, condition, direction,
+  scope or attribution);
+- *silence*: the answer says CPIC does not address something that a span does address, or gives
+  a reason for a gap that nothing prints;
+- *differing entries*: two spans differ and the answer averages them or picks one without
+  naming both.
+
+**4. Concision.** A sentence or clause that could be deleted without losing a printed fact.
+
+**5. Register.** Hedging of the writer's own, preamble, closing summary, publication identifiers,
+a fact credited to the wrong kind of document.
+
+## Rules
+
+- Judge against the material above, not your own pharmacogenomic knowledge. A claim you believe
+  is clinically wrong but the material prints is not a fidelity failure; add it as a note.
+- Read the span before you call a claim supported or not; do not decide by matching strings.
+  Allele names differ by one character; a drug name can sit inside another.
+- Report only what you would change. A preference is not a finding.
+- Every finding quotes the answer's (or the question's) words, and the material's words where it
+  rests on a span.
+
+## Output
+
+Return JSON only:
+
+{"verdicts": {"question": "pass|fail", "coverage": "pass|fail", "fidelity": "pass|fail",
+              "concision": "pass|fail", "register": "pass|fail"},
+ "findings": [{"axis": "question|coverage|fidelity|concision|register",
+               "kind": "e.g. unsupported, distorted, silence, empty, delete",
+               "quote": "the answer's or question's words",
+               "source_quote": "the material's words, or null",
+               "change": "the change you would make, <= 30 words"}],
+ "notes": ["anything for the human check that is not a finding"]}
