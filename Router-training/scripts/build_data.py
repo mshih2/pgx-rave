@@ -2,8 +2,9 @@
 
   python scripts/build_data.py --bank bank.jsonl --prompt fg --out data/fg
 
-bank.jsonl: one {"question_id", "question", "gt_claims": [...]} per line, optionally with "fold"
-(0 or 1), "tier" (common / intermediate / hard), "category" and "ground_truth" (GT text).
+bank.jsonl: one {"question_id", "question", "tier", "gt_claims": [...]} per line, optionally with
+"fold" (0 or 1) and "ground_truth" (GT text). "tier" is hard, intermediate or common; it becomes the
+row's category, which the rollout loop requires to be a tier.
 Writes <out>/fold<k>.jsonl per fold (or <out>/all.jsonl) in the row format the rollout loop
 reads, with the router prompt built by pgxroute.routers.rl.llm_router, and <out>/gt_claims.json
 ({question_id: [claim, ...]}), which the live reward reads through GT_CLAIMS_FILE.
@@ -18,11 +19,8 @@ sys.path.insert(0, str(ROOT / "PGxRoute"))
 
 from pgxroute.routers.rl.llm_router import PROMPTS, build_messages  # noqa: E402
 
-TIER_TO_TOOL = {"common": "tool_b", "intermediate": "tool_a", "filtered": "tool_a", "hard": "tool_c"}
-# The rollout loop treats a row as a routing question only if its category contains one of its
-# keywords (dosing, safety, recommendation, definition, concept, mechanism, phenotype, guideline,
-# classification, gene_list).
-DEFAULT_CATEGORY = "guideline_lookup"
+TIER_TO_TOOL = {"common": "tool_b", "intermediate": "tool_a", "hard": "tool_c"}
+TIER_ALIASES = {"filtered": "intermediate"}
 
 
 def _qid(v):
@@ -34,15 +32,19 @@ def to_row(item, prompt):
     qid = _qid(item["question_id"])
     q = item["question"]
     gt_text = item.get("ground_truth") or "\n".join(str(c) for c in item["gt_claims"])
-    tier = str(item.get("tier", ""))
-    tool = TIER_TO_TOOL.get(tier, "")
+    tier = str(item.get("tier", "")).strip().lower()
+    tier = TIER_ALIASES.get(tier, tier)
+    if tier not in TIER_TO_TOOL:
+        raise ValueError(f"question {item['question_id']}: tier must be one of {sorted(TIER_TO_TOOL)}, "
+                         f"got {item.get('tier')!r}")
+    tool = TIER_TO_TOOL[tier]
     return {"data_source": "pgx",
             "prompt": build_messages(prompt, q),
             "ability": "pharmacogenomics",
             "reward_model": {"style": "rule", "ground_truth": gt_text},
             "extra_info": {"index": qid, "split": "train", "need_tools_kwargs": True,
                            "question": q, "answer": gt_text, "expected_mode": tool,
-                           "category": item.get("category") or DEFAULT_CATEGORY,
+                           "category": tier,
                            "level": tier, "pgx_analysis": "{}",
                            "tools_kwargs": {"pgx_query": {"create_kwargs": {
                                "question": q, "answer": gt_text, "expected_mode": tool,
