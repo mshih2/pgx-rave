@@ -162,8 +162,8 @@ TOOL_TO_MODE = {
     'tool_c': 'full_rules_top8',
 }
 
-PGX_CATEGORY_KEYWORDS = ['dosing', 'safety', 'recommendation', 'definition', 'concept', 'mechanism',
-                            'phenotype', 'guideline', 'classification', 'gene_list']
+# A row is a routing question when its category is one of the question tiers.
+PGX_CATEGORIES = ('hard', 'intermediate', 'common')
 
 
 def compute_cache_baseline_rewards(all_turn_index, all_turn_repeat_ids, all_turn_tools, active_tools, reward_cache,
@@ -247,10 +247,8 @@ def compute_cache_baseline_rewards(all_turn_index, all_turn_repeat_ids, all_turn
     return rewards, details
 
 def is_pgx_category(category: str) -> bool:
-    """Check if a category is a PGx-specific category (content-based: definition, concept, dosing_recommendation, etc.)."""
-    return category not in ['qa', 'func_call'] and any(
-        kw in category.lower() for kw in PGX_CATEGORY_KEYWORDS
-    )
+    """Check if a row's category is a question tier (hard, intermediate or common)."""
+    return str(category or '').strip().lower() in PGX_CATEGORIES
 
 def get_pgx_mode_from_tool(tool_name: str) -> str:
     """Get pipeline mode from tool name."""
@@ -2100,7 +2098,7 @@ class LLMGenerationManager:
                     if step==1:
                         cur_batch_output_files.append(cur_transfer_dir)
                 else:
-                    # Handle other category types (e.g., PGx categories like 'dosing_recommendation', 'safety_recommendation', etc.)
+                    # Handle other category types (e.g., the PGx tiers 'hard', 'intermediate' and 'common')
                     # For PGx, we should treat them as func_call since they use tool calling
                     # Extract problem/question for fallback
                     problem_key = 'problem' if 'problem' in gen_batch.non_tensor_batch else 'question'

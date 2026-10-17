@@ -10,12 +10,12 @@ the answers are scored by the Verifier. The verl used for training is included i
 train.sh                     launches training (python -m recipe.algo.main_grpo_pgx with its settings)
 configs/
   config.py                  settings read as the module `config` by the rollout loop and workers
-  pgx_tools_3tool.json    the router's tool set (tool_a, tool_b, tool_c)
+  pgx_tools_3tool.json       the router's tool set (tool_a, tool_b, tool_c)
   vllm_model_configs.json
 router_reward/               live reward (calls PGxRoute and the Verifier)
   live_reward.py             per-step reward table: pipelines run live, answers scored by the Verifier
-  pgx_env.py              runs the pipeline a tool stands for, through PGxRoute
-  pgx_reward.py           reward manager that hands the rollout loop's rewards to the trainer
+  pgx_env.py                 runs the pipeline a tool stands for, through PGxRoute
+  pgx_reward.py              reward manager that hands the rollout loop's rewards to the trainer
 scripts/
   build_data.py              question bank -> training rows (router prompt) + gt_claims.json
   merge_checkpoint.py        trained checkpoint -> Hugging Face folder for serving
@@ -73,7 +73,7 @@ training one. The Full pipeline needs a retrieval corpus (`PGxRoute/README.md`).
 ## Running
 
 ```bash
-# 1. training rows from a question bank (one {"question_id", "question", "gt_claims", "fold"} per line)
+# 1. training rows from a question bank (one {"question_id", "question", "tier", "gt_claims", "fold"} per line)
 python scripts/build_data.py --bank bank.jsonl --prompt fg --out data/fg
 
 # 2. train on one fold (COST_WEIGHT penalises tokens; 0 = off)
