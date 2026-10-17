@@ -1,36 +1,50 @@
 # AI-assisted questions
 
-Question-answer pairs from the PGx question bank that were drafted with AI assistance and then
-curated: 153 English questions. Each one comes with a long-form ground-truth (GT) answer and the GT
-claims the Verifier scores answers against.
+## The question bank
 
-| Tier | Questions | Evaluation | Tuning | Evidence an answer needs |
+The PGx question bank has 165 English questions, 55 per tier. Tiers are defined by where the
+evidence lives. Thirty questions (10 per tier) were used to tune the pipeline prompts and test
+basic routing methods. The remaining 135 (45 per tier) are the evaluation set; after
+decomposition, they hold 2,040 GT claims.
+
+| Tier | Evidence an answer needs | Questions | Evaluation | Tuning |
 |---|---|---|---|---|
-| hard | 43 | 35 | 8 | CPIC guideline or supplement text beyond the CPIC API's core recommendation |
-| intermediate | 55 | 45 | 10 | one CPIC API recommendation lookup |
-| common | 55 | 45 | 10 | none from CPIC: everyday medication questions with no PGx content |
+| hard | CPIC guideline or supplement text beyond the CPIC API's core recommendation | 55 | 45 | 10 |
+| intermediate | one CPIC API lookup | 55 | 45 | 10 |
+| common | none from CPIC: everyday medication questions with no PGx content | 55 | 45 | 10 |
+
+## This folder
+
+This folder holds the bank's questions that were drafted with AI assistance and then curated:
+every question except the 12 hard questions q0 to q11 (10 evaluation, 2 tuning), which include
+the pharmacist-written pairs. Each question comes with its long-form ground-truth (GT) answer and
+the GT claims the Verifier scores answers against.
+
+| Tier | Questions here | Evaluation | Tuning |
+|---|---|---|---|
+| hard | 43 | 35 | 8 |
+| intermediate | 55 | 45 | 10 |
+| common | 55 | 45 | 10 |
+| total | 153 | 125 | 28 |
 
 ## How they were made
 
-Three licensed pharmacists experienced in interpreting CPIC guidelines defined with us the
-principles for a question-answer pair: the elements a question must state, the facets an answer
-must cover and the answer format. They also wrote hard sample pairs from the CPIC guidelines and
-drug information. Those pharmacist-written pairs are not in this folder.
+We built the bank with three licensed pharmacists experienced in interpreting CPIC guidelines.
+They defined with us the principles for a question-answer pair: the elements a question must
+state, the facets an answer must cover and the answer format. They also wrote 12 hard sample pairs
+from the CPIC guidelines and drug information.
 
-The questions here were generated with AI assistance:
-
-- **Hard and intermediate questions** were modelled on the pharmacist-written pairs in what an
-  answer must cover, its format and its easy-to-digest style. Their GT is built only from the
-  tier's CPIC source: guideline and supplement text for hard questions, the CPIC API lookup for
-  intermediate ones.
+- **Hard and intermediate questions.** The other hard and intermediate questions were generated
+  with AI assistance, modelled on these 12 in what an answer must cover, its format and its
+  easy-to-digest style. Their GT is built only from the tier's CPIC source: guideline and
+  supplement text for hard questions, the CPIC API for intermediate ones. Intermediate GT is
+  curated with AI from related CPIC API lookups and trimmed to the information relevant to the
+  question.
 - **Common questions** were also generated with AI assistance.
 
-LLMs cross-reviewed the hard and intermediate questions and their GT against their sources. The
-non-pharmacist authors then checked every item word by word. Each GT was decomposed into
-single-fact claims, and the claims were curated against the GT and its sources.
-
-The evaluation questions are the ones the pipelines, routers and frontier baselines are compared
-on. The tuning questions were used to tune the pipeline prompts and to test basic routing.
+LLMs cross-reviewed the hard and intermediate questions, and the non-pharmacist authors then
+checked every item word by word. Each GT was decomposed into single-fact claims, and the claims
+were curated against the GT and its sources.
 
 ## Format
 

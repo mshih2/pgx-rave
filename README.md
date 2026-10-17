@@ -23,7 +23,7 @@ needs verification by a licensed pharmacist or clinician.
 | [`Question-generation/`](Question-generation/) | Builds a question bank: hard, intermediate and common questions with GT and curated GT claims, cross-reviewed by two LLMs before a human check |
 | [`Router-training/`](Router-training/) | GRPO training of the LLM router, with rewards computed live from the PGxRoute pipelines and the Verifier (includes the modified verl it runs on) |
 | [`Frontier-baselines/`](Frontier-baselines/) | The system prompt and runner for asking frontier models with web search the same questions |
-| [`question-bank/ai-assisted/`](question-bank/ai-assisted/) | 153 questions of the PGx question bank that were drafted with AI assistance and then curated, each with its GT answer and GT claims |
+| [`question-bank/ai-assisted/`](question-bank/ai-assisted/) | The question bank's AI-assisted questions (153 of 165), each with its GT answer and GT claims |
 
 Each code folder has its own README, requirements and licence. The folders work together:
 
@@ -36,31 +36,33 @@ Each code folder has its own README, requirements and licence. The folders work 
 
 ## Question bank
 
-The bank's questions fall into three tiers by where their evidence lives:
+The bank has 165 English questions, 55 per tier, with tiers defined by where the evidence lives:
 
 - **hard:** needs CPIC guideline or supplement text beyond the CPIC API's core recommendation;
 - **intermediate:** answerable from one CPIC API lookup;
 - **common:** everyday medication questions with no PGx content.
 
-Three licensed pharmacists experienced in interpreting CPIC guidelines defined with us the
-principles for a question-answer pair: the elements a question must state, the facets an answer
-must cover and the answer format. They also wrote hard sample pairs from the CPIC guidelines and
-drug information.
+Thirty questions (10 per tier) were used to tune the pipeline prompts and test basic routing
+methods. The remaining 135 (45 per tier) are the evaluation set; after decomposition, they hold
+2,040 GT claims.
 
-The other questions were generated with AI assistance:
+We built the bank with three licensed pharmacists experienced in interpreting CPIC guidelines.
+They defined with us the principles for a question-answer pair: the elements a question must
+state, the facets an answer must cover and the answer format. They also wrote 12 hard sample pairs
+from the CPIC guidelines and drug information.
 
-- Hard and intermediate questions were modelled on the pharmacist-written pairs in what an answer
-  must cover, its format and its easy-to-digest style. Their GT is built only from the tier's CPIC
-  source.
-- Common questions were also generated with AI assistance.
+- The other hard and intermediate questions were generated with AI assistance, modelled on these
+  12 in what an answer must cover, its format and its easy-to-digest style. Their GT is built only
+  from the tier's CPIC source.
+- The common questions were also generated with AI assistance.
 
-LLMs cross-reviewed the hard and intermediate questions and their GT. The non-pharmacist authors
-then checked every item word by word.
+LLMs cross-reviewed the hard and intermediate questions, and the non-pharmacist authors then
+checked every item word by word.
 
-[`question-bank/ai-assisted/`](question-bank/ai-assisted/) holds these AI-assisted questions, with
-their GT answers, curated GT claims and evaluation or tuning split. The pharmacist-written pairs
-are not included. [`Question-generation/`](Question-generation/) is the code for building
-questions and GT this way.
+[`question-bank/ai-assisted/`](question-bank/ai-assisted/) holds the AI-assisted questions:
+every question except the 12 hard questions q0 to q11, which include the pharmacist-written pairs.
+That is 153 questions, each with its GT answer, curated GT claims and evaluation or tuning split.
+[`Question-generation/`](Question-generation/) is the code for building questions and GT this way.
 
 ## Models and services
 
