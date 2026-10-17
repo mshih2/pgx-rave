@@ -14,7 +14,7 @@ to match them in what an answer must cover, its format and its easy-to-digest st
 
 | Field | Content |
 |---|---|
-| `pair_id` | 1 to 12 |
+| `question_id` | 0 to 11 (the AI-assisted questions are numbered from 12) |
 | `tier` | `hard` |
 | `question` | the question text |
 | `answer` | the pharmacists' answer |
