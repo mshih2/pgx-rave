@@ -256,15 +256,15 @@ class JsonlDataset(Dataset):
                 if os.path.exists(candidate):
                     return os.path.abspath(candidate)
             
-            # Try relative to COVAPH_ROOT environment variable
-            covaph_root = os.getenv('COVAPH_ROOT')
-            if covaph_root:
-                # Try training directory under COVAPH_ROOT
-                candidate = os.path.join(covaph_root, 'ToolOrchestra', 'training', path)
+            # Try relative to PGX_ROOT environment variable
+            pgx_root = os.getenv('PGX_ROOT')
+            if pgx_root:
+                # Try training directory under PGX_ROOT
+                candidate = os.path.join(pgx_root, 'ToolOrchestra', 'training', path)
                 if os.path.exists(candidate):
                     return os.path.abspath(candidate)
-                # Try direct under COVAPH_ROOT
-                candidate = os.path.join(covaph_root, path)
+                # Try direct under PGX_ROOT
+                candidate = os.path.join(pgx_root, path)
                 if os.path.exists(candidate):
                     return os.path.abspath(candidate)
             
@@ -349,7 +349,7 @@ class JsonlDataset(Dataset):
         row_dict['cur_transfer_dir'] = self.cur_transfer_dir
         row_dict['model_type'] = self.model_type
         
-        # Extract fields from extra_info if available (for CoVaPh format)
+        # Extract fields from extra_info if available (for PGx format)
         if 'extra_info' in row_dict and isinstance(row_dict['extra_info'], dict):
             extra_info = row_dict['extra_info']
             
@@ -364,7 +364,7 @@ class JsonlDataset(Dataset):
             if 'category' in extra_info:
                 row_dict['category'] = extra_info['category']
             else:
-                # Default to 'func_call' for CoVaPh (since CoVaPh uses tool calling)
+                # Default to 'func_call' for PGx (since PGx uses tool calling)
                 row_dict['category'] = 'func_call'
             
             # Extract tools_kwargs if available (needed for tool execution)
@@ -378,7 +378,7 @@ class JsonlDataset(Dataset):
             if 'level' in extra_info:
                 row_dict['level'] = extra_info['level']
         else:
-            # If no extra_info, set default category for CoVaPh
+            # If no extra_info, set default category for PGx
             row_dict['category'] = 'func_call'
         
         # Load tools from tool_config_path if available and tools not already set
@@ -398,14 +398,14 @@ class JsonlDataset(Dataset):
                 print(f"Warning: Could not load tools from {self.tool_config_path}: {e}")
                 row_dict['tools'] = []
         
-        # Set default values for CoVaPh-specific fields if missing
+        # Set default values for PGx-specific fields if missing
         # These fields are expected by generation_quick3.py
         if 'tools' not in row_dict:
             # Default: empty tools list (will be populated from tools_kwargs if available)
             row_dict['tools'] = []
         
         if 'model_mapping' not in row_dict:
-            # Default model mapping (can be customized per CoVaPh needs)
+            # Default model mapping (can be customized per PGx needs)
             row_dict['model_mapping'] = {}
         
         if 'tool_pricing' not in row_dict:
@@ -668,7 +668,7 @@ class RayGRPOTrainer(RayPPOTrainer):
                         topk_doc = OmegaConf.select(self.config.data, "topk_doc", default=3)
                         use_llm_reward = OmegaConf.select(self.config.data, "use_llm_reward", default=True)
                         efficiency_reward = OmegaConf.select(self.config.data, "efficiency_reward", default=False)
-                        exp_tag = OmegaConf.select(self.config.data, "exp_tag", default="covaph")
+                        exp_tag = OmegaConf.select(self.config.data, "exp_tag", default="pgx")
                         use_qa_reward = OmegaConf.select(self.config.data, "use_qa_reward", default=False)
                         
                         final_gen_batch_output,tool_avg = generation_manager.run_llm_loop(

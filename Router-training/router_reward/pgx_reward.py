@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """
-CoVaPh Reward Functions for ToolOrchestra GRPO Training
+PGx Reward Functions for ToolOrchestra GRPO Training
 Computes rewards based on:
-1. Outcome reward: Answer quality (using CoVaPh answer_reward with multi-dimensional evaluation)
+1. Outcome reward: Answer quality (using PGx answer_reward with multi-dimensional evaluation)
 2. Efficiency reward: Cost/time savings from using simpler pipelines
 """
 
@@ -14,7 +14,7 @@ import torch
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
-# Add CoVaPh modularized_src to path
+# Add PGx modularized_src to path
 
 
 # Pipeline mode efficiency scores (higher = more efficient)
@@ -27,7 +27,7 @@ MODE_EFFICIENCY = {
 
 
 
-def compute_covaph_reward(
+def compute_pgx_reward(
     response: str,
     tool_result: Dict[str, Any],
     ground_truth: str,
@@ -35,11 +35,11 @@ def compute_covaph_reward(
     reward_weights: Optional[Dict[str, float]] = None,
 ) -> Tuple[float, Dict[str, Any]]:
     """
-    Compute the total reward for a CoVaPh tool selection (fallback only; training uses pref_vec reward from generation_quick3).
+    Compute the total reward for a PGx tool selection (fallback only; training uses pref_vec reward from generation_quick3).
     
     Args:
         response: The orchestrator's response (containing tool selection)
-        tool_result: Result from executing the CoVaPh tool
+        tool_result: Result from executing the PGx tool
         ground_truth: Ground truth answer
         question: Original question
         reward_weights: Optional weights for reward dimensions (Accuracy, Relevance, Completeness, Clarity)
@@ -107,7 +107,7 @@ def compute_outcome_score(
 ) -> Tuple[float, Dict[str, Any]]:
     """
     Compute outcome score based on answer quality using reward evaluation.
-    Uses CoVaPh's AnswerRewardEvaluator for multi-dimensional evaluation.
+    Uses PGx's AnswerRewardEvaluator for multi-dimensional evaluation.
     
     Args:
         predicted: Predicted answer
@@ -137,9 +137,9 @@ def compute_outcome_score(
         
 
 
-class CoVaPhRewardManager:
+class PGxRewardManager:
     """
-    Reward manager for CoVaPh GRPO training.
+    Reward manager for PGx GRPO training.
     Integrates with ToolOrchestra's training loop.
     """
     
@@ -214,7 +214,7 @@ class CoVaPhRewardManager:
                 question = data_item.non_tensor_batch.get('question', '')
                 
                 print(f"[Reward Manager] ⚠️  Warning: No pre-computed reward found for item {i}, computing from tool_result (fallback)")
-                reward, _ = compute_covaph_reward(
+                reward, _ = compute_pgx_reward(
                     response=response,
                     tool_result=tool_result,
                     ground_truth=ground_truth,
@@ -243,18 +243,18 @@ class CoVaPhRewardManager:
 def get_reward_fn(
     tokenizer,
     reward_weights: Optional[Dict[str, float]] = None,
-) -> CoVaPhRewardManager:
+) -> PGxRewardManager:
     """
-    Factory function to create a CoVaPh reward manager.
+    Factory function to create a PGx reward manager.
     
     Args:
         tokenizer: Tokenizer for processing
         reward_weights: Optional weights for reward dimensions (Accuracy, Relevance, Completeness, Clarity)
         
     Returns:
-        CoVaPhRewardManager instance
+        PGxRewardManager instance
     """
-    return CoVaPhRewardManager(
+    return PGxRewardManager(
         tokenizer=tokenizer,
         reward_weights=reward_weights,
     )
@@ -268,7 +268,7 @@ if __name__ == "__main__":
     I should use the full pipeline to get accurate dosing information.
     </think>
     
-    Tool call: covaph_query with mode="full"
+    Tool call: pgx_query with mode="full"
     """
     
     test_tool_result = {
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     test_ground_truth = "Codeine should be avoided in CYP2D6 poor metabolizers."
     test_question = "What is the recommended dosing for codeine in a CYP2D6 poor metabolizer?"
     
-    reward, breakdown = compute_covaph_reward(
+    reward, breakdown = compute_pgx_reward(
         response=test_response,
         tool_result=test_tool_result,
         ground_truth=test_ground_truth,

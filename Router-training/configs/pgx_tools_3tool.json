@@ -3,7 +3,7 @@
     "type": "function",
     "function": {
       "name": "tool_a",
-      "description": "Answer pharmacogenomics questions using CoVaPh pipeline without document retrieval. Runs: Query Rewrite → CPIC API → Final Reasoning. Best for questions that need genotype-specific dosing or CPIC lookup but do not require document/guideline retrieval.\n\nPipeline | Modules | Cost | Latency | Best Use Case\ntool_a (skip_retrieve) | 3 modules | Medium | ~20-40s | CPIC/dosing without retrieval",
+      "description": "Answer pharmacogenomics questions using PGx pipeline without document retrieval. Runs: Query Rewrite → CPIC API → Final Reasoning. Best for questions that need genotype-specific dosing or CPIC lookup but do not require document/guideline retrieval.\n\nPipeline | Modules | Cost | Latency | Best Use Case\ntool_a (skip_retrieve) | 3 modules | Medium | ~20-40s | CPIC/dosing without retrieval",
       "parameters": {
         "properties": {},
         "required": [],

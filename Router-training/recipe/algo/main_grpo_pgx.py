@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 """
-CoVaPh GRPO Training Main Module
-Trains an orchestrator model to select the best CoVaPh pipeline mode.
+PGx GRPO Training Main Module
+Trains an orchestrator model to select the best PGx pipeline mode.
 """
 
 import os
@@ -27,9 +27,9 @@ for _p in (REPO_ROOT / "Verifier", REPO_ROOT / "PGxRoute", TRAINING_DIR / "confi
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
-# Import the canonical CoVaPh reward manager (single source of truth).
+# Import the canonical PGx reward manager (single source of truth).
 # Must come after the sys.path setup above.
-from router_reward.covaph_reward import CoVaPhRewardManager
+from router_reward.pgx_reward import PGxRewardManager
 
 # Debug: Print paths for troubleshooting
 if os.getenv("DEBUG_PATHS"):
@@ -38,7 +38,7 @@ if os.getenv("DEBUG_PATHS"):
     print(f"REPO_ROOT: {REPO_ROOT}")
     print(f"sys.path: {sys.path[:3]}")
 
-# Hydra searchpath in grpo_trainer_covaph.yaml uses `file://verl/trainer/config` (relative to cwd).
+# Hydra searchpath in grpo_trainer_pgx.yaml uses `file://verl/trainer/config` (relative to cwd).
 # Ray unpacks working_dir to a temp root that already contains `verl/`; chdir to recipe/algo breaks that.
 os.chdir(TRAINING_DIR)
 
@@ -70,7 +70,7 @@ except ImportError:
 
 
 
-@hydra.main(config_path=str(SCRIPT_DIR / "config"), config_name="grpo_trainer_covaph", version_base=None)
+@hydra.main(config_path=str(SCRIPT_DIR / "config"), config_name="grpo_trainer_pgx", version_base=None)
 def main(config):
     # Log tee is set up inside TaskRunner.run() (the Ray actor where all
     # real work happens).  Setting it up here as well would create a second
@@ -207,10 +207,10 @@ class TaskRunner:
             role_worker_mapping[Role.RefPolicy] = ray.remote(ActorRolloutRefWorker)
             mapping[Role.RefPolicy] = global_pool_id
         
-        # Initialize CoVaPh reward manager
+        # Initialize PGx reward manager
         reward_manager_name = config.reward_manager.get("type", "naive")
-        if reward_manager_name == 'covaph':
-            reward_fn = CoVaPhRewardManager(
+        if reward_manager_name == 'pgx':
+            reward_fn = PGxRewardManager(
                 tokenizer=tokenizer,
                 num_examine=1,
             )
@@ -262,7 +262,7 @@ class TaskRunner:
             print("or remove the environment variable.")
             
             # Create a ready file to signal that models are loaded
-            ready_file = os.getenv('MODEL_READY_FILE', '/tmp/covaph_models_ready.flag')
+            ready_file = os.getenv('MODEL_READY_FILE', '/tmp/pgx_models_ready.flag')
             with open(ready_file, 'w') as f:
                 f.write(f"Models loaded at: {os.getenv('BASE_DIR', 'unknown')}\n")
                 f.write(f"Timestamp: {time.time()}\n")
