@@ -4,7 +4,8 @@
 
 bank.jsonl: one {"question_id", "question", "tier", "gt_claims": [...]} per line, optionally with
 "fold" (0 or 1) and "ground_truth" (GT text). "tier" is hard, intermediate or common; it becomes the
-row's category, which the rollout loop requires to be a tier.
+row's category, which the rollout loop requires to be a tier. --folds names a file of
+"question_id fold" lines (header optional) that sets the fold of the questions it lists.
 Writes <out>/fold<k>.jsonl per fold (or <out>/all.jsonl) in the row format the rollout loop
 reads, with the router prompt built by pgxroute.routers.rl.llm_router, and <out>/gt_claims.json
 ({question_id: [claim, ...]}), which the live reward reads through GT_CLAIMS_FILE.
@@ -53,13 +54,31 @@ def to_row(item, prompt):
             "index": qid}
 
 
+def read_folds(path):
+    """A "question_id fold" file (whitespace-separated, header optional) -> {question_id: fold}."""
+    folds = {}
+    for line in open(path, encoding="utf-8"):
+        parts = line.split()
+        if len(parts) == 2 and parts[1] in ("0", "1"):
+            folds[_qid(parts[0])] = int(parts[1])
+    if not folds:
+        raise SystemExit(f"{path}: no 'question_id fold' lines")
+    return folds
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--bank", required=True)
     ap.add_argument("--prompt", choices=PROMPTS, required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--folds", help="file of 'question_id fold' lines that sets each listed question's fold")
     args = ap.parse_args()
     bank = [json.loads(l) for l in open(args.bank, encoding="utf-8") if l.strip()]
+    if args.folds:
+        folds = read_folds(args.folds)
+        for b in bank:
+            if _qid(b["question_id"]) in folds:
+                b["fold"] = folds[_qid(b["question_id"])]
     missing = [b.get("question_id") for b in bank if not b.get("gt_claims")]
     if missing:
         raise SystemExit(f"questions without gt_claims: {missing[:10]}")
