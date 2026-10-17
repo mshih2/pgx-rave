@@ -1,0 +1,28 @@
+Tag one pharmacogenomic question and its answer, so the question bank's coverage can be counted.
+
+## Information categories (use these names and no others)
+
+{{CATEGORIES}}
+
+## Clinical question facets
+
+{{FACETS}}
+
+## The question
+
+{{QUESTION}}
+
+## Its answer
+
+{{ANSWER}}
+
+## Output
+
+Return JSON only:
+
+{"categories": ["the categories whose information the answer needs from CPIC"],
+ "facets": ["the facets the question raises, by name"],
+ "answer_direction": "change | no_change | mixed",
+ "population": "the population the question states, in a few words (adult, child, an ancestry, pregnancy, ...)"}
+
+`answer_direction` is whether the answer changes the prescription the question describes.

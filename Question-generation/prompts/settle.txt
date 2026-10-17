@@ -1,0 +1,44 @@
+Two independent readers reviewed the same question and reference answer against the same
+material. Settle their findings: decide which changes the answer writer will make.
+
+{{MATERIAL}}
+
+## The reference answer
+
+```text
+{{ANSWER}}
+```
+
+## The two reviews
+
+{{READERS}}
+
+## The settlement rule
+
+- **A finding is acted on only if both readers made it independently.** The same span at a
+  different severity or under a different label counts as agreement; findings about different
+  sentences do not. Opposite positions on one span are a disagreement: record it, do not act.
+- **A finding from one reader is recorded, not acted on.**
+- **You may overrule a corroborated finding** when reading the material shows it is wrong. Two
+  readers agreeing is not the same as being right: re-read the span, including the sentences
+  before it that set its subject.
+- **Do not order a repair the material cannot support.** If the material cannot settle which of
+  two entries governs, the change is to name both, not to pick one. When a change deletes one of
+  a redundant pair, say which of the two is the printed one to keep.
+- Change the question only if both readers found a defect in it and the fix needs no material
+  beyond what is above.
+
+## Output
+
+Return JSON only:
+
+{"actions": [{"change": "the change to make, precise enough to apply without the reviews",
+              "quote": "the answer's words it applies to",
+              "source_quote": "the material's words it rests on, or null",
+              "readers": "both"}],
+ "overruled": [{"finding": "...", "why": "<= 30 words, quoting the material"}],
+ "single_reader": [{"finding": "...", "reader": 1}],
+ "disagreements": [{"span": "...", "positions": "..."}],
+ "question_change": null}
+
+or, with a question change: "question_change": {"new_question": "...", "why": "..."}

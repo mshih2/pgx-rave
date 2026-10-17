@@ -1,0 +1,8 @@
+[
+ {"name": "Pharmacogenetic risk analysis", "covers": "what the genotype or phenotype means for this drug: exposure, efficacy or risk"},
+ {"name": "Dosing recommendation", "covers": "the recommended action and dose (start, adjust, avoid) and its strength"},
+ {"name": "Safety & toxicity risk", "covers": "the adverse reactions the genotype makes more or less likely, and how serious they are"},
+ {"name": "Alternative therapy & clinical context", "covers": "alternative drugs, and how age, population, indication, comorbidity or co-medication change the advice"},
+ {"name": "Monitoring strategy", "covers": "what to monitor, when, and which result calls for a change"},
+ {"name": "Testing indication & implications", "covers": "who to test and when, what the test covers or misses, and what a result means for the patient's other drugs or relatives"}
+]

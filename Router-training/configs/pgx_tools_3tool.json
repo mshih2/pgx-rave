@@ -1,0 +1,41 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "tool_a",
+      "description": "Answer pharmacogenomics questions using PGx pipeline without document retrieval. Runs: Query Rewrite → CPIC API → Final Reasoning. Best for questions that need genotype-specific dosing or CPIC lookup but do not require document/guideline retrieval.\n\nPipeline | Modules | Cost | Latency | Best Use Case\ntool_a (skip_retrieve) | 3 modules | Medium | ~20-40s | CPIC/dosing without retrieval",
+      "parameters": {
+        "properties": {},
+        "required": [],
+        "title": "parameters",
+        "type": "object"
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "tool_b",
+      "description": "Answer pharmacogenomics questions using direct LLM reasoning without any external data. Runs only Module 4 (Final Reasoning). Best for simple, general questions about pharmacogenomics concepts that don't require specific drug-gene data or guideline references. Use for definitional questions, general explanations, or when the question is about basic pharmacology concepts.\n\nPipeline | Modules | Cost | Latency | Best Use Case\ntool_b (module4_only) | 1 module | Low | ~10-20s | Simple concept questions",
+      "parameters": {
+        "properties": {},
+        "required": [],
+        "title": "parameters",
+        "type": "object"
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "tool_c",
+      "description": "Answer pharmacogenomics questions using CPIC lookup plus guideline-corpus evidence retrieval. Runs: Query Rewrite → CPIC API → text retrieval over extracted guideline+supplement passages (hybrid search, listwise rerank, top-8 evidence) → Final Reasoning (single pass). Best for questions that need guideline evidence beyond lookup tables but are answerable in a single reasoning pass.\n\nPipeline | Modules | Cost | Latency | Best Use Case\ntool_c (full_rules_top8) | 4 stages | Medium-High | ~60-120s | Guideline-grounded dosing/safety in one pass",
+      "parameters": {
+        "properties": {},
+        "required": [],
+        "title": "parameters",
+        "type": "object"
+      }
+    }
+  }
+]

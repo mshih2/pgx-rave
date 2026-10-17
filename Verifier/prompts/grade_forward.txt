@@ -1,0 +1,106 @@
+PATIENT QUESTION CONTEXT (the question that both the response and the ground truth
+are answering — for reference only, to resolve pronouns and implicit drug/gene subjects):
+{question_text}
+
+---
+
+You are a pharmacogenomics evaluator. You are given ONE claim taken from a clinical
+response, and a numbered list of GROUND-TRUTH (GT) claims taken from the reference
+answer. Decide how well the CLAIM is supported BY THE GT CLAIMS and return exactly one
+of three labels.
+
+Judge ONLY against the GT claims. Do NOT use outside pharmacogenetic knowledge to
+complete, correct, or contradict the claim — a claim counts only insofar as the GT
+states it.
+
+LABELS
+
+1. "Supported" — the CLAIM is directly stated or logically entailed by one or more GT
+   claims. Paraphrase and being shorter are fine, AS LONG AS every decision-driving
+   component of the matched GT claim is present (the action / direction, any
+   dose / number / range, the strength grade, the gating condition, the named agent,
+   the target value, the phenotype label).
+   REGISTER IS NOT CONTENT: a lay word and its clinical term for the same thing are the
+   same fact — <plain-English symptom name> and <the medical term for that symptom>
+   match, in either direction. Do not downgrade for one side using patient wording and
+   the other using terminology. The same holds for a symptom named by its everyday
+   description versus its diagnostic label.
+
+2. "Partial" — the CLAIM matches a GT claim on the CORE direction but OMITS a
+   decision-driving component the GT specifies, or states a weaker / less-specific
+   version, with NO contradiction. (For example: keeps the right action but drops the
+   dose / number / range, drops the strength grade, or drops a gating condition; softens
+   a firm directive; names a monitoring parameter but drops its target; covers only one
+   gene / route of a paired GT claim.) Use Partial only when a MATERIAL piece is missing,
+   not for merely shorter wording.
+
+3. "Wrong" — the CLAIM is NOT supported by any GT claim: either it CONTRADICTS a GT claim
+   (opposite action, contradictory number, mutually exclusive mechanism), or the GT is
+   SILENT on it (a different drug / gene, or a non-answer / deflection that never gives
+   the pharmacogenetic answer). In this three-label scheme, a claim the GT does not
+   support is "Wrong" EVEN IF it might be true in the world — correctness beyond the GT
+   is judged in a separate step, not here.
+
+CITATION / SOURCE-ATTRIBUTION claims — SPECIAL RULE (overrides the general label definitions).
+A claim whose content IS an attribution of a recommendation to a source — e.g. "The <drug>
+recommendations follow the CPIC Guideline for <GENE> and <DRUG>", a "Source: ..." block, or an
+attribution to FDA / DPWG / PharmGKB / EMA — is judged on SOURCE IDENTITY ONLY: the issuing body
+plus the gene-drug topic.
+IGNORE ENTIRELY: year, PMID, PMCID, PharmGKB PA id, NCBI Bookshelf NBK id, DOI, author names,
+table / figure numbers, URLs. Their presence, absence, or mismatch must NOT change the label.
+Naming the right issuing body for the right gene-drug topic is FULL credit — never downgrade it
+just because a bibliographic identifier is missing or differently worded.
+A claim naming the right issuing body for the right gene-drug topic is "Supported". / Only a claim with no source attribution at all, or naming a different issuing body, is "Wrong".
+CONTENT-WITH-A-SOURCE is NOT a citation claim: a claim that carries clinical CONTENT with a source
+attached (e.g. "the FDA label for <DRUG> warns of a boxed risk in <PHENOTYPE> patients", "<study>
+reported a response rate of <N>%") is judged as an ORDINARY CONTENT claim — the CONTENT must be covered; the
+attribution is incidental.
+
+EVIDENCE PRECISION: when the GT claim carries a confidence interval, a sample size, or the study design behind a figure, and the response gives only the point estimate, that is PARTIAL, not full support -- matching the figure alone is not enough, because how well established the figure is has been dropped.
+
+DECISION ORDER: (1) fully entailed by a GT claim -> Supported. (2) core matches a GT
+claim but a decision-driving piece is missing or softened -> Partial. (3) otherwise
+(contradicts a GT claim, or the GT is silent) -> Wrong.
+
+"matching_gt_indices": the 0-based GT index(es) the CLAIM supports or partially covers;
+for Wrong, include an index only if it directly contradicts that GT claim, otherwise
+leave it empty.
+
+EXAMPLES
+
+Example GT set A (vexanides / MT-ZQR1 increased-risk variant):
+[0] MT-ZQR1 m.2071A>G corresponds to increased risk of vexanide-induced retinal injury.
+[1] MT-ZQR1 variants such as m.2071A>G more closely resemble the microbial ribosomal target of the vexanides, which underlies the increased risk of vexanide-induced retinal injury.
+[2] Vexanides should be avoided in a carrier of an MT-ZQR1 increased-risk variant unless the risk of irreversible vision loss is outweighed by the severity of the underlying condition and no effective alternative exists (CPIC strength: Strong).
+[3] If a vexanide is used in a carrier of an MT-ZQR1 increased-risk variant, it should be given for the shortest possible period with therapeutic drug monitoring and ophthalmologic review.
+
+CLAIM: "The patient carries the MT-ZQR1 m.2071A>G increased-risk variant."
+-> {"label":"Supported","matching_gt_indices":[0],"rationale":"Restates GT [0]."}
+CLAIM: "Vexanides should be avoided in this patient."
+-> {"label":"Partial","matching_gt_indices":[2],"rationale":"Same action as GT [2] but omits the CPIC strength grade and the gating exception."}
+CLAIM: "Standard-dose gribozole is an appropriate first-line choice here."
+-> {"label":"Wrong","matching_gt_indices":[2],"rationale":"Opposite action to GT [2], which says avoid."}
+CLAIM: "Plamidone dosing should follow the PLM4 genotype."
+-> {"label":"Wrong","matching_gt_indices":[],"rationale":"A different drug/gene; the GT is silent on it."}
+
+Example GT set B (torvexin / TQR5 poor metabolizer):
+[0] TQR5 *22/*22 corresponds to reduced TQR5 activity (poor metabolizer).
+[1] Torvexin should be started at a reduced dose (about one dose level, ~70% of standard) in a TQR5 poor metabolizer to lower the risk of severe neutropenia and diarrhea (DPWG guideline).
+
+CLAIM: "Reduce the torvexin starting dose in this TQR5 poor metabolizer."
+-> {"label":"Partial","matching_gt_indices":[1],"rationale":"Correct reduce-dose direction but drops the ~70% figure and the DPWG source."}
+CLAIM: "Torvexin can be given at the full standard starting dose."
+-> {"label":"Wrong","matching_gt_indices":[1],"rationale":"Contradicts the reduced-dose recommendation in GT [1]."}
+
+OUTPUT — return ONLY this JSON object:
+{"label":"Supported"|"Partial"|"Wrong","matching_gt_indices":[<0-based indices, or empty>],"rationale":"<one short sentence>"}
+
+The GT_CLAIMS list below is 0-indexed.
+
+---
+
+CLAIM:
+{claim_text}
+
+GT_CLAIMS:
+{numbered_gt_claims}

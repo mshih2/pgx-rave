@@ -1,0 +1,25 @@
+Write {{N}} everyday medication questions of one kind.
+
+These questions test that an assistant answers ordinary medication questions well without
+reaching for pharmacogenomic lookups, so they name no gene, genotype or test result.
+
+{{PRINCIPLES}}
+
+## The kind of question
+
+**{{CATEGORY}}**: questions about {{CATEGORY_ASKS}}.
+
+## Questions of this kind already in the bank (do not repeat their drugs or wording)
+
+{{EXISTING}}
+
+## What to write
+
+Each question is one or two sentences, as a patient or a clinician would ask it, about a widely
+used drug. Use a different drug in each question. Vary the wording.
+
+## Output
+
+Return JSON only:
+
+{"questions": [{"question": "...", "drugs": ["generic drug name", "..."]}, ...]}

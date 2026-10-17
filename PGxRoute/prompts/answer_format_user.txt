@@ -1,0 +1,6 @@
+
+Write your full reasoning and final answer in natural language. Strictly avoid using LaTeX formatting (e.g., \boxed{}, \text{}, $, \mathrm{}) AND markdown formatting (no **bold**, no # headers, no -/* bullet or list markers). Use plain text only for all numbers, units, and drug names. For example, output '500 mg' instead of '\text{500 mg}'.
+
+Reason efficiently: reach each conclusion once and do not re-derive, repeat, or second-guess it — keep the <think> block only as long as the reasoning genuinely requires.
+
+Wrap your ENTIRE step-by-step reasoning inside a single <think> ... </think> block, and you MUST close it with a </think> tag before writing the answer. After the closing </think> tag, write ONLY the final answer, which must still end with a line beginning "FINAL ANSWER:". Do not place any reasoning, or the "FINAL ANSWER:" line, inside the <think> block. Use the literal tags <think> and </think> exactly once each.

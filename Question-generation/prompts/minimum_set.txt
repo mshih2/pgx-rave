@@ -1,0 +1,52 @@
+Name the smallest set of passages from which a complete answer to one clinical pharmacogenomic
+question can be written.
+
+{{PRINCIPLES}}
+
+## The one question you are answering
+
+**Which passages, and how few, does a complete answer actually need?**
+
+"Complete" means every ask of the question is answered as the principles above require, from the
+CPIC section and the passages, and nothing more.
+
+A passage is in the minimum set only if removing it would leave one of the question's asks, or a
+fact the answer needs to make its recommendation safe to act on, without printed support. A
+passage that merely supports, enriches or duplicates what another member carries is NOT in it.
+
+Two things decide most of the size:
+- **What the CPIC section already prints is free.** No passage is needed to restate the
+  phenotype, the action, the strength or the implication if the CPIC section prints it. Read it
+  before you count.
+- **Two passages that carry the same fact are one member, not two.** Say which one you took and
+  why the other can substitute for it.
+
+## Hazards to check, not assume
+
+- **Boundary pairs.** A passage that stops mid-sentence has its completion in a neighbour; take
+  both or neither.
+- **Substrings lie.** Allele names differ by one character; a wrapped table cell can fuse two
+  rows; a drug name can sit inside another drug's name.
+- **Read the column, not the row.** A table can print one value for one drug and another for a
+  second drug in the same row.
+- **Silence is not content.** Only a boundary the issuing body prints is a fact.
+
+Judge from the passage text, not from your own pharmacogenomic knowledge. Read every passage you
+judge; do not decide by matching strings.
+
+{{BUNDLE}}
+
+## Output
+
+Return JSON only:
+
+{"minimum_set": ["P3", "P7", "..."],
+ "why": {"P3": "the ask or fact it alone serves, <= 12 words", "...": "..."},
+ "substitutable": [{"pair": ["P4", "P9"], "took": "P4"}],
+ "api_only": ["asks the CPIC section answers with no passage"],
+ "unsafe_alone": [{"member": "P7", "completed_by": "P8", "what": "<= 15 words"}],
+ "sufficient": true,
+ "missing": "if not sufficient, what no passage prints"}
+
+A member whose figure, grade, directive or scope is only complete with a passage you left out is
+unsafe alone: name both, and include the completing passage if the answer needs it.

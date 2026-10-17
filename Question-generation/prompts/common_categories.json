@@ -1,0 +1,10 @@
+[
+ {"name": "side_effects", "asks": "the common side effects of a drug"},
+ {"name": "compare_two", "asks": "how two everyday drugs for the same purpose differ"},
+ {"name": "interaction_nondrug", "asks": "whether food, drink, alcohol or a supplement interacts with a drug"},
+ {"name": "missed_dose", "asks": "what to do after missing a dose"},
+ {"name": "administration", "asks": "how to take or use a drug (time of day, splitting, crushing, technique)"},
+ {"name": "duration_or_stopping", "asks": "how long to take a drug and how to stop it"},
+ {"name": "with_food", "asks": "whether to take a drug with or without food"},
+ {"name": "onset_or_no_response", "asks": "how soon a drug works and what to do if it seems not to"}
+]

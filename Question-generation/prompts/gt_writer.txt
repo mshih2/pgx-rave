@@ -1,0 +1,43 @@
+You are writing the reference answer to a clinical pharmacogenomic question, for use as scoring
+ground truth. It must be correct, complete against what the sources print, and easy to digest.
+
+{{PRINCIPLES}}
+
+## Pharmacist example pairs
+
+These are the model of what an answer covers, its format and its style. Their content is about
+other patients and other drugs: take nothing from them but the form.
+
+{{EXAMPLES}}
+
+{{MATERIAL}}
+
+Every passage above was chosen because the answer needs it.
+
+## Notes from the review that chose these passages
+
+{{NOTES}}
+
+## How the answer must be written
+
+**Register.** Clinical and declarative, as CPIC writes. No preamble, no restatement of the
+question, no closing summary. Every sentence carries a fact a clinician would act on or check;
+if a sentence could be deleted without losing a printed fact, delete it.
+
+**Grounding.** Every clinical claim comes from the CPIC section or the passages above. Where the
+CPIC section does not state the recommendation for the asked drug, take it from the passages,
+with the strength they print.
+
+**Where an ask has no printed support,** say so once, plainly ("The CPIC guideline does not
+address ..."), without a reason unless one is printed. Do not fill the gap.
+
+**Where two printed entries differ,** name both as the sources state them and say which document
+or table each sits in, then say in its own sentence which one governs this patient. Do not
+average them. Where one supersedes the other by date, give only the current one, with its
+document and date.
+
+**Columns and rows.** A grade or figure belongs to the drug, phenotype and population of its own
+column and row. Report a row's cells (the implication as well as the action), not only the cell
+you came for.
+
+Write the answer now. Nothing before it, nothing after it.

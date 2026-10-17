@@ -1,0 +1,29 @@
+Sort passages of a CPIC guideline or supplement into information categories.
+
+## The categories (use these names and no others)
+
+{{CATEGORIES}}
+
+## What to do
+
+For each passage below, give every category whose information the passage itself prints. A
+passage may carry several categories; a category it only mentions in passing does not count.
+Judge from the passage text, not from what the guideline as a whole covers.
+
+Also say whether the passage prints a boundary: that CPIC declines to recommend, places
+something outside its scope, finds the evidence insufficient, or recommends no change
+(`printed_negative`).
+
+If no category fits, give an empty list. Do not invent a category name.
+
+## Passages
+
+{{UNITS}}
+
+## Output
+
+Return JSON only, keyed by the passage identifier after `###`:
+
+{"<identifier>": {"categories": ["..."], "printed_negative": false}, ...}
+
+Every passage above appears exactly once.

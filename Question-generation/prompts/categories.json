@@ -1,0 +1,106 @@
+[
+ {
+  "name": "therapeutic_recommendation",
+  "definition": "the recommended prescribing action for a phenotype, including recommendations printed only in a footnote, figure or a guideline with no lookup row"
+ },
+ {
+  "name": "recommendation_strength_evidence_grading",
+  "definition": "how a recommendation is classified and how the evidence behind it is graded"
+ },
+ {
+  "name": "implication_phenotype_consequence",
+  "definition": "what a phenotype means for drug exposure, response or risk, including the quantitative values behind it"
+ },
+ {
+  "name": "population_or_context_stratified_action",
+  "definition": "advice that differs by population, indication, dose range or clinical context"
+ },
+ {
+  "name": "pediatric_applicability",
+  "definition": "whether and how the recommendations apply to children"
+ },
+ {
+  "name": "other_considerations",
+  "definition": "printed factors that modify the recommendation: drug interactions, comorbidities, non-genetic factors"
+ },
+ {
+  "name": "caveats_misuse",
+  "definition": "caveats on applying a recommendation safely: titration, residual risk, misapplication"
+ },
+ {
+  "name": "dosing_algorithm_equations",
+  "definition": "dosing algorithms and equations"
+ },
+ {
+  "name": "drug_pharmacologic_properties_matrix",
+  "definition": "tables comparing pharmacologic properties across drugs"
+ },
+ {
+  "name": "mechanism_background",
+  "definition": "the pharmacology and mechanism behind the gene-drug interaction"
+ },
+ {
+  "name": "evidence_linking_genotype_phenotype",
+  "definition": "per-study evidence linking a genotype to a drug outcome: design, finding, evidence level"
+ },
+ {
+  "name": "allele_function_activity",
+  "definition": "allele function and activity values, substrate dependence and contested function assignments"
+ },
+ {
+  "name": "diplotype_phenotype_assignment",
+  "definition": "the rationale for assigning a phenotype to a diplotype"
+ },
+ {
+  "name": "allele_definition",
+  "definition": "allele definitions, default assignments and notes on what platforms cover"
+ },
+ {
+  "name": "allele_frequency_by_population",
+  "definition": "allele or phenotype frequencies by population, study or country, and linkage disequilibrium"
+ },
+ {
+  "name": "genetic_test_interpretation",
+  "definition": "how to read a test result: allele calls, reporting conventions, results a test cannot call"
+ },
+ {
+  "name": "available_genetic_test_options",
+  "definition": "available tests and methods, and the alleles they interrogate"
+ },
+ {
+  "name": "genotyping_indication_who_to_test",
+  "definition": "who to test and when"
+ },
+ {
+  "name": "incidental_findings",
+  "definition": "what a result means for drugs or conditions other than the one tested for"
+ },
+ {
+  "name": "benefits_risks_to_patient",
+  "definition": "the benefits and risks to the patient of testing and of acting on a result"
+ },
+ {
+  "name": "label_regulatory_comparison",
+  "definition": "drug-label and regulatory positions compared with CPIC's"
+ },
+ {
+  "name": "guideline_scope_purpose",
+  "definition": "what the guideline covers and what it places outside its scope"
+ },
+ {
+  "name": "guideline_update_history",
+  "definition": "what changed between guideline versions and corrections"
+ },
+ {
+  "name": "gene_drug_pair_level_and_testing_status",
+  "definition": "a gene-drug pair's CPIC level and testing status"
+ },
+ {
+  "name": "ehr_cds_implementation",
+  "definition": "implementation in health records and decision support: alert placement, workflow, result filing"
+ },
+ {
+  "name": "literature_review_method",
+  "definition": "how the gene-drug literature was searched, screened and reviewed"
+ }
+]

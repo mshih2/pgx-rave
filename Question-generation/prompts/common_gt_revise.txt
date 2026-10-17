@@ -1,0 +1,28 @@
+You wrote this reference answer to an everyday medication question. Another model reviewed it
+and asks for the changes below. Settle them: accept a change that makes the answer more correct
+or more useful to the patient, and rebut one that does not, with your reason.
+
+{{PRINCIPLES}}
+
+## The question
+
+{{QUESTION}}
+
+## Your answer
+
+```text
+{{ANSWER}}
+```
+
+## The requested changes
+
+```json
+{{CRITIQUE}}
+```
+
+## Output
+
+Return JSON only:
+
+{"responses": [{"change": 0, "accepted": true, "why": "<= 25 words"}],
+ "answer": "the full answer with the accepted changes applied, and nothing else changed"}

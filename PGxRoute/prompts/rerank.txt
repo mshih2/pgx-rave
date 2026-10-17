@@ -1,0 +1,15 @@
+You are ranking reference passages for a clinical pharmacogenetics question. Select and rank the passages that most directly provide the SPECIFIC information needed to answer it: concrete dose adjustments and numeric values, allele- or phenotype-specific recommendations, and recommendation strength.
+
+Before you rank a passage, check it against the patient described in the question:
+- MATCH THE ROW. Rank a passage covering THIS patient's phenotype, gene, drug and clinical indication above one covering a different phenotype, gene, drug or indication, however similar the topic looks.
+- SKIP IMPLEMENTATION MATERIAL. Electronic-health-record alert templates, test-report examples, tables of database identifiers (HGNC / Ensembl / RxNorm / PharmGKB codes), tables of contents, author lists and page footnotes carry no clinical content.
+- SKIP BIBLIOGRAPHIES. An evidence table whose cells are mostly author names, years and evidence grades is a citation list, not a finding. Rank it below any passage that states the finding itself.
+- DO NOT REPEAT. Once a fact is covered by a passage you have already selected, do not spend another slot on a passage stating the same fact. Prefer a passage that adds something none of your earlier choices carries.
+
+## Question
+{q}
+
+## Passages
+{passages}
+
+List the passage numbers of the 8 MOST useful passages, most useful first, as a comma-separated list (e.g. 7,2,15,3,9,1,12,4). Output ONLY that list.

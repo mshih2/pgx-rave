@@ -1,0 +1,29 @@
+# Training environment (the verl in this folder is used as is; these packages are not modified)
+torch==2.10.0
+vllm==0.18.1
+ray[default]==2.54.1
+transformers==5.5.3
+tensordict==0.12.1
+torchdata==0.11.0
+hydra-core==1.3.2
+omegaconf==2.3.0
+accelerate==1.13.0
+peft==0.18.1
+flash-attn==2.8.3
+numpy==2.2.6
+pandas==3.0.2
+pyarrow>=19.0.0
+codetiming
+datasets
+liger-kernel
+pybind11
+pylatexenc
+packaging>=20.0
+setuptools<81          # verl imports pkg_resources
+safetensors
+wandb==0.25.1
+uvicorn
+fastapi
+# PGxRoute pipelines and Verifier, called by the live reward
+requests
+openai>=1.40,<3

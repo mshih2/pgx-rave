@@ -1,0 +1,5 @@
+{
+ "tool_a": "- tool_a — the CPIC lookup row for the gene(s) and drug(s) named in the query.\n  The row holds: phenotype, recommendation, strength of recommendation,\n  implications, comments.",
+ "tool_b": "- tool_b — no source; answers from the model's own knowledge. No lookup, no retrieval.",
+ "tool_c": "- tool_c — the CPIC lookup row, plus the most relevant passages retrieved\n  from the CPIC guideline and supplement PDFs."
+}
