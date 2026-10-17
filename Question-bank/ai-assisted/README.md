@@ -18,7 +18,8 @@ decomposition, they hold 2,040 GT claims.
 This folder holds the bank's questions that were drafted with AI assistance and then curated:
 every question except the 12 hard questions q0 to q11 (10 evaluation, 2 tuning), which include
 the pharmacist-written pairs. Each question comes with its long-form ground-truth (GT) answer and
-the GT claims the Verifier scores answers against.
+the GT claims the Verifier scores answers against. The 12 pharmacist-written pairs are in
+`../pharmacist-written`.
 
 | Tier | Questions here | Evaluation | Tuning |
 |---|---|---|---|

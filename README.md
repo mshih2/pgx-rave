@@ -23,7 +23,8 @@ needs verification by a licensed pharmacist or clinician.
 | [`Question-generation/`](Question-generation/) | Builds a question bank: hard, intermediate and common questions with GT and curated GT claims, cross-reviewed by two LLMs before a human check |
 | [`Router-training/`](Router-training/) | GRPO training of the LLM router, with rewards computed live from the PGxRoute pipelines and the Verifier (includes the modified verl it runs on) |
 | [`Frontier-baselines/`](Frontier-baselines/) | The system prompt and runner for asking frontier models with web search the same questions |
-| [`question-bank/ai-assisted/`](question-bank/ai-assisted/) | The question bank's AI-assisted questions (153 of 165), each with its GT answer and GT claims |
+| [`Question-bank/pharmacist-written/`](Question-bank/pharmacist-written/) | The 12 hard sample question-answer pairs written by the pharmacists |
+| [`Question-bank/ai-assisted/`](Question-bank/ai-assisted/) | The question bank's AI-assisted questions (153 of 165), each with its GT answer and GT claims |
 
 Each code folder has its own README, requirements and licence. The folders work together:
 
@@ -59,10 +60,12 @@ from the CPIC guidelines and drug information.
 LLMs cross-reviewed the hard and intermediate questions, and the non-pharmacist authors then
 checked every item word by word.
 
-[`question-bank/ai-assisted/`](question-bank/ai-assisted/) holds the AI-assisted questions:
+[`Question-bank/ai-assisted/`](Question-bank/ai-assisted/) holds the AI-assisted questions:
 every question except the 12 hard questions q0 to q11, which include the pharmacist-written pairs.
 That is 153 questions, each with its GT answer, curated GT claims and evaluation or tuning split.
-[`Question-generation/`](Question-generation/) is the code for building questions and GT this way.
+[`Question-bank/pharmacist-written/`](Question-bank/pharmacist-written/) holds the 12 hard sample
+pairs the pharmacists wrote. [`Question-generation/`](Question-generation/) is the code for
+building questions and GT this way.
 
 ## Models and services
 
@@ -98,7 +101,7 @@ python Verifier/run.py --input items.jsonl --out results/
 
 ## Not included
 
-Apart from the AI-assisted questions in `question-bank/`, this repository holds code and prompts
+Apart from the question-answer pairs in `Question-bank/`, this repository holds code and prompts
 only. It includes no model outputs or scores, and no trained router models; `PGxRoute/` and
 `Router-training/` describe how to train your own.
 
@@ -126,7 +129,6 @@ Question-generation, and the live reward in Router-training. These parts work wi
 ## Licence
 
 The code and prompts in every folder are under the Apache License 2.0 (each folder's `LICENSE`).
-The question-answer pairs in `question-bank/` are under CC BY 4.0
-(`question-bank/ai-assisted/LICENSE`). The verl code in `Router-training/verl/` keeps its Apache
-2.0 licence and `NOTICE`. CPIC API content is CC0 1.0. The models and APIs keep their own licences
-and terms.
+The question-answer pairs in `Question-bank/` are under CC BY 4.0 (the `LICENSE` in each of its
+folders). The verl code in `Router-training/verl/` keeps its Apache 2.0 licence and `NOTICE`. CPIC
+API content is CC0 1.0. The models and APIs keep their own licences and terms.
