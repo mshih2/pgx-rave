@@ -12,7 +12,8 @@ The prompt was condensed from the API-only, Full-pipeline and Reasoning-only pip
 into one prompt for a model without retrieval. Rules that presuppose pasted reference sections
 were removed, while these were kept: strength labels, the primary-before-conditional order, the
 evidence-grade vs. classification rule, the ban on fabricated citation identifiers, the scope
-guard, the FINAL ANSWER line, and one worked example on an invented gene and drug.
+guard, the FINAL ANSWER line, and one worked example on an invented gene and drug. A gene-drug
+answer may use CPIC sources only: the CPIC guideline, its supplement and the CPIC API.
 
 ## Models and settings
 
