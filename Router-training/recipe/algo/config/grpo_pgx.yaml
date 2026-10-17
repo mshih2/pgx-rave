@@ -1,10 +1,10 @@
-# CoVaPh Tool Selection GRPO Training Configuration
+# PGx Tool Selection GRPO Training Configuration
 # Optimized for A100 80GB GPUs
 
 hydra:
   searchpath:
     # Use relative path since Ray job packs working_dir to temporary location
-    # The working_dir is set to BASE_DIR in train_covaph.sh, so verl/ is relative to it
+    # The working_dir is set to BASE_DIR in train_pgx.sh, so verl/ is relative to it
     # This works because Ray copies the entire working_dir structure to the temp location
     - file://verl/trainer/config
 
@@ -18,10 +18,10 @@ ray_init:
 
 # Data configuration
 data:
-  train_files: ['covaph_train_data.jsonl']
-  val_files: ['covaph_val_data.jsonl']
-  train_tool_config_path: covaph_tools.json
-  test_tool_config_path: covaph_tools.json
+  train_files: ['pgx_train_data.jsonl']
+  val_files: ['pgx_val_data.jsonl']
+  train_tool_config_path: pgx_tools.json
+  test_tool_config_path: pgx_tools.json
   shuffle_train_dataloader: true
   train_batch_size: 8
   gen_batch_size: 32
@@ -94,13 +94,13 @@ actor_rollout_ref:
 critic:
   strategy: fsdp
 
-# Reward model (disabled, using CoVaPh reward manager)
+# Reward model (disabled, using PGx reward manager)
 reward_model:
   enable: false
 
 # Reward manager
 reward_manager:
-  type: covaph
+  type: pgx
   max_concurrency: 64
   use_remote_reward: false
 
@@ -115,7 +115,7 @@ trainer:
   nnodes: 1
   critic_warmup: 0
   logger: ['console', 'wandb']
-  project_name: covaph_orchestrator
+  project_name: pgx_orchestrator
   experiment_name: tool_selection
   val_before_train: false
   log_val_generations: 8

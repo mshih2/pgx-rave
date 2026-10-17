@@ -36,7 +36,7 @@ def to_row(item, prompt):
     gt_text = item.get("ground_truth") or "\n".join(str(c) for c in item["gt_claims"])
     tier = str(item.get("tier", ""))
     tool = TIER_TO_TOOL.get(tier, "")
-    return {"data_source": "covaph",
+    return {"data_source": "pgx",
             "prompt": build_messages(prompt, q),
             "ability": "pharmacogenomics",
             "reward_model": {"style": "rule", "ground_truth": gt_text},
@@ -44,7 +44,7 @@ def to_row(item, prompt):
                            "question": q, "answer": gt_text, "expected_mode": tool,
                            "category": item.get("category") or DEFAULT_CATEGORY,
                            "level": tier, "pgx_analysis": "{}",
-                           "tools_kwargs": {"covaph_query": {"create_kwargs": {
+                           "tools_kwargs": {"pgx_query": {"create_kwargs": {
                                "question": q, "answer": gt_text, "expected_mode": tool,
                                "id": str(qid)}}}},
             "pref_vec": {"accuracy": 1.0, "latency": 0.0, "cost": 0.0},

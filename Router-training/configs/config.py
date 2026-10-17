@@ -25,7 +25,7 @@ REWARD_MULTI_QUESTION_COUNT = 3
 USE_EXISTING_QUESTION_TOOL_RESULTS = False
 QUESTION_TOOL_RESULT_DIR = ""
 
-# Pipeline modes the router's tools stand for (router_reward/covaph_env.py maps them to PGxRoute pipelines).
+# Pipeline modes the router's tools stand for (router_reward/pgx_env.py maps them to PGxRoute pipelines).
 VALID_PIPELINE_MODES = ["skip_retrieve", "module4_only", "full_rules_top8"]
 
 # Rollout sampling temperature used by the verl rollout workers when the trainer config sets none

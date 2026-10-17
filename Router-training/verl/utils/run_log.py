@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Tee stdout/stderr to a log file (used by main_grpo_covaph, verl FSDP workers).
+"""Tee stdout/stderr to a log file (used by main_grpo_pgx, verl FSDP workers).
 
-Expected on ``sys.path`` with ``TRAINING_DIR`` as cwd (see ``main_grpo_covaph``).
+Expected on ``sys.path`` with ``TRAINING_DIR`` as cwd (see ``main_grpo_pgx``).
 """
 from __future__ import annotations
 

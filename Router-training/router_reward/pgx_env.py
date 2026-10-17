@@ -44,7 +44,7 @@ def _run(question, mode):
                     "usage": usage, "latency_seconds": time.time() - t}
         except Exception as e:
             err = f"{type(e).__name__}: {e}"
-            print(f"[covaph_env] {pipeline} failed: {err}", flush=True)
+            print(f"[pgx_env] {pipeline} failed: {err}", flush=True)
     return {"response": f"Error: {err}", "mode": mode, "pipeline": pipeline, "eval_result": None,
             "cost": 0, "usage": {"input_tokens": 0, "output_tokens": 0},
             "latency_seconds": 0.0, "error": err}
@@ -79,7 +79,7 @@ def clear_step_results():
         _results.clear()
 
 
-def call_covaph_tool(arguments):
+def call_pgx_tool(arguments):
     """Entry point used by the rollout loop (generation_quick3.call_tool)."""
     mode = arguments.get("pipeline_mode") or arguments.get("mode")
     question = arguments.get("question") or arguments.get("problem")

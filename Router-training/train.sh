@@ -29,16 +29,16 @@ export PYTHONPATH="$HERE:$HERE/configs:$PGX_REPO_ROOT/PGxRoute:$PGX_REPO_ROOT/Ve
 export RAY_USAGE_STATS_ENABLED=0 PYTORCH_ALLOC_CONF=expandable_segments:True
 
 cd "$HERE"
-python3 -u -m recipe.algo.main_grpo_covaph \
+python3 -u -m recipe.algo.main_grpo_pgx \
     data.shuffle=True \
     algorithm.adv_estimator=cache_baseline \
     data.train_files="$TRAIN_FILE" \
-    data.train_tool_config_path="$HERE/configs/covaph_tools_3tool.json" \
-    data.test_tool_config_path="$HERE/configs/covaph_tools_3tool.json" \
+    data.train_tool_config_path="$HERE/configs/pgx_tools_3tool.json" \
+    data.test_tool_config_path="$HERE/configs/pgx_tools_3tool.json" \
     +data.my_output_dir="$OUT_DIR" \
     +data.cur_transfer_dir="$OUT_DIR/transfer" \
     +data.model_type="$MODEL_PATH" \
-    +data.exp_tag=covaph \
+    +data.exp_tag=pgx \
     +data.use_llm_reward=true \
     +data.efficiency_reward=true \
     data.prompt_template=qwen-base \
@@ -114,5 +114,5 @@ python3 -u -m recipe.algo.main_grpo_covaph \
     trainer.resume_mode=auto \
     'actor_rollout_ref.actor.checkpoint.contents=[model,extra]' \
     +trainer.save_critic_checkpoint=False \
-    reward_manager.type=covaph \
+    reward_manager.type=pgx \
     "$@"

@@ -1,11 +1,11 @@
-# CoVaPh GRPO Trainer Configuration
-# Merged configuration combining grpo_trainer.yaml and grpo_covaph.yaml
-# This file directly inherits from ppo_trainer and includes all GRPO and CoVaPh-specific settings
+# PGx GRPO Trainer Configuration
+# Merged configuration combining grpo_trainer.yaml and grpo_pgx.yaml
+# This file directly inherits from ppo_trainer and includes all GRPO and PGx-specific settings
 
 hydra:
   searchpath:
     # Use relative path since Ray job packs working_dir to temporary location
-    # The working_dir is set to BASE_DIR in train_covaph.sh, so verl/ is relative to it
+    # The working_dir is set to BASE_DIR in train_pgx.sh, so verl/ is relative to it
     # This works because Ray copies the entire working_dir structure to the temp location
     - file://verl/trainer/config
 
@@ -19,13 +19,13 @@ ray_init:
 
 # Data configuration
 data:
-  # CoVaPh-specific tool config paths
-  train_tool_config_path: covaph_tools.json
-  test_tool_config_path: covaph_tools.json
+  # PGx-specific tool config paths
+  train_tool_config_path: pgx_tools.json
+  test_tool_config_path: pgx_tools.json
   prompt_template: qwen-base
-  # CoVaPh-specific data settings
-  train_files: ['covaph_train_selected_data.jsonl']
-  val_files: ['covaph_val_selected_data.jsonl']
+  # PGx-specific data settings
+  train_files: ['pgx_train_selected_data.jsonl']
+  val_files: ['pgx_val_selected_data.jsonl']
   shuffle_train_dataloader: true
   # Batch sizes for 44 training samples and 14 validation samples
   # train_batch_size=4: 44/4 = 11 batches per epoch
@@ -115,14 +115,14 @@ critic:
     clip_grad_norm: 1.0 # required
     lr_warmup_steps: 0
 
-# Reward model (disabled, using CoVaPh reward manager)
+# Reward model (disabled, using PGx reward manager)
 reward_model:
   enable: false
   # Note: reward_manager and overlong_buffer from ppo_trainer are ignored since enable=false
 
-# Reward manager (CoVaPh-specific)
+# Reward manager (PGx-specific)
 reward_manager:
-  type: covaph
+  type: pgx
   max_concurrency: 64
   use_remote_reward: false
 
@@ -137,7 +137,7 @@ trainer:
   nnodes: 1
   critic_warmup: 0
   logger: ['console', 'wandb']
-  project_name: covaph_orchestrator
+  project_name: pgx_orchestrator
   experiment_name: tool_selection
   val_before_train: false
   log_val_generations: 8

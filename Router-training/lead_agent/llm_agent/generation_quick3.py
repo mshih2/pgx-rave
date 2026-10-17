@@ -61,17 +61,17 @@ if _root_ok:
 # -----------------------------------------------------------------------------
 import importlib.util as _importlib_util
 
-_covaph_config_path = _CONFIG_ROOT / "config.py"
+_pgx_config_path = _CONFIG_ROOT / "config.py"
 try:
-    _cfg_ok = _covaph_config_path.exists()
+    _cfg_ok = _pgx_config_path.exists()
 except OSError:
     _cfg_ok = False
 if not _cfg_ok:
-    raise ImportError(f"Missing config: {_covaph_config_path}")
+    raise ImportError(f"Missing config: {_pgx_config_path}")
 
-_cfg_spec = _importlib_util.spec_from_file_location("config", _covaph_config_path)
+_cfg_spec = _importlib_util.spec_from_file_location("config", _pgx_config_path)
 if _cfg_spec is None or _cfg_spec.loader is None:
-    raise ImportError(f"Failed to create import spec: {_covaph_config_path}")
+    raise ImportError(f"Failed to create import spec: {_pgx_config_path}")
 
 _cfg_mod = _importlib_util.module_from_spec(_cfg_spec)
 _cfg_spec.loader.exec_module(_cfg_mod)
@@ -81,7 +81,7 @@ print(f"[Tool Orchestration][Debug] pinned config to: {getattr(_cfg_mod, '__file
 
 for _req in ("USE_EXISTING_QUESTION_TOOL_RESULTS", "QUESTION_TOOL_RESULT_DIR"):
     if not hasattr(_cfg_mod, _req):
-        raise ImportError(f"Config missing required {_req} in {_covaph_config_path}")
+        raise ImportError(f"Config missing required {_req} in {_pgx_config_path}")
 
 import multiprocessing as mp
 from transformers import AutoTokenizer
@@ -153,16 +153,16 @@ ALL_TOOLS = {
 }
 
 # Actor is restricted to only these tools
-VALID_COVAPH_TOOL_NAMES = ['tool_a', 'tool_b', 'tool_c']
+VALID_PGX_TOOL_NAMES = ['tool_a', 'tool_b', 'tool_c']
 
-# Tool name -> pipeline mode (router_reward/covaph_env.py maps modes to PGxRoute pipelines)
+# Tool name -> pipeline mode (router_reward/pgx_env.py maps modes to PGxRoute pipelines)
 TOOL_TO_MODE = {
     'tool_a': 'skip_retrieve',
     'tool_b': 'module4_only',
     'tool_c': 'full_rules_top8',
 }
 
-COVAPH_CATEGORY_KEYWORDS = ['dosing', 'safety', 'recommendation', 'definition', 'concept', 'mechanism',
+PGX_CATEGORY_KEYWORDS = ['dosing', 'safety', 'recommendation', 'definition', 'concept', 'mechanism',
                             'phenotype', 'guideline', 'classification', 'gene_list']
 
 
@@ -246,20 +246,20 @@ def compute_cache_baseline_rewards(all_turn_index, all_turn_repeat_ids, all_turn
                                "cost_term": cost_term, "reward": acc_adv + cost_term}
     return rewards, details
 
-def is_covaph_category(category: str) -> bool:
-    """Check if a category is a CoVaPh-specific category (content-based: definition, concept, dosing_recommendation, etc.)."""
+def is_pgx_category(category: str) -> bool:
+    """Check if a category is a PGx-specific category (content-based: definition, concept, dosing_recommendation, etc.)."""
     return category not in ['qa', 'func_call'] and any(
-        kw in category.lower() for kw in COVAPH_CATEGORY_KEYWORDS
+        kw in category.lower() for kw in PGX_CATEGORY_KEYWORDS
     )
 
-def get_covaph_mode_from_tool(tool_name: str) -> str:
+def get_pgx_mode_from_tool(tool_name: str) -> str:
     """Get pipeline mode from tool name."""
     return TOOL_TO_MODE.get(tool_name, 'full')
 
 
 def _load_active_tools(tool_config_path):
-    """Active CoVaPh tool set = the tool names advertised in the selected tool-config JSON
-    (TOOL_CONFIG / data.train_tool_config_path), restricted to VALID_COVAPH_TOOL_NAMES.
+    """Active PGx tool set = the tool names advertised in the selected tool-config JSON
+    (TOOL_CONFIG / data.train_tool_config_path), restricted to VALID_PGX_TOOL_NAMES.
     Raises if the config is unreadable."""
     import json as _json, os as _os
     for p in [tool_config_path, _os.path.join(_os.environ.get("BASE_DIR", ""), tool_config_path or "")]:
@@ -268,7 +268,7 @@ def _load_active_tools(tool_config_path):
                 names = []
                 for t in _json.load(open(p)):
                     n = (t.get("function", {}) or {}).get("name") or t.get("name")
-                    if n in VALID_COVAPH_TOOL_NAMES:
+                    if n in VALID_PGX_TOOL_NAMES:
                         names.append(n)
                 if names:
                     return names
@@ -277,16 +277,16 @@ def _load_active_tools(tool_config_path):
     raise RuntimeError(
         f"[Tool Orchestration] could not load active tools from {tool_config_path!r} "
         f"(tried the relative name and the BASE_DIR-joined path). Refusing to default to the "
-        f"full set {VALID_COVAPH_TOOL_NAMES}, which would silently admit tools the run excludes. "
+        f"full set {VALID_PGX_TOOL_NAMES}, which would silently admit tools the run excludes. "
         f"Fix TOOL_CONFIG / the Ray working_dir so the config is readable."
     )
 
 
-def _can_parse_covaph_prediction(prediction: str) -> bool:
-    """Quick check: would `postprocess_predictions` succeed on this CoVaPh prediction?
+def _can_parse_pgx_prediction(prediction: str) -> bool:
+    """Quick check: would `postprocess_predictions` succeed on this PGx prediction?
 
     Mirrors the success conditions in `postprocess_predictions` without raising.
-    Returns True if exactly one CoVaPh tool name can be uniquely identified.
+    Returns True if exactly one PGx tool name can be uniquely identified.
     """
     if not isinstance(prediction, str) or not prediction:
         return False
@@ -295,20 +295,20 @@ def _can_parse_covaph_prediction(prediction: str) -> bool:
         # Look for a JSON-like {"name": "tool_X"} inside <tool_call> tags
         m = _re.findall(r'<tool_call>(.*?)</tool_call>', prediction, _re.DOTALL)
         for tag_content in m:
-            for t in VALID_COVAPH_TOOL_NAMES:
+            for t in VALID_PGX_TOOL_NAMES:
                 if f'"{t}"' in tag_content:
                     return True
         return False
     matches = _re.findall(
-        rf'"name"\s*:\s*"({"|".join(VALID_COVAPH_TOOL_NAMES)})"',
+        rf'"name"\s*:\s*"({"|".join(VALID_PGX_TOOL_NAMES)})"',
         prediction,
     )
     matches = list(dict.fromkeys(matches))  # de-dup preserving order
     return len(matches) == 1
 
 
-def _normalize_covaph_tool_arguments(args: Any) -> Dict[str, Any]:
-    """Normalize CoVaPh tool arguments. Models often output {"parameters": {}} per prompt; treat as empty."""
+def _normalize_pgx_tool_arguments(args: Any) -> Dict[str, Any]:
+    """Normalize PGx tool arguments. Models often output {"parameters": {}} per prompt; treat as empty."""
     if args is None or args == {}:
         return {}
     if isinstance(args, dict) and set(args.keys()) == {"parameters"}:
@@ -318,9 +318,9 @@ def _normalize_covaph_tool_arguments(args: Any) -> Dict[str, Any]:
     return args if isinstance(args, dict) else {}
 
 
-def is_covaph_tool(tool_name: str) -> bool:
-    """Check if a tool name is a valid CoVaPh tool."""
-    return tool_name in VALID_COVAPH_TOOL_NAMES
+def is_pgx_tool(tool_name: str) -> bool:
+    """Check if a tool name is a valid PGx tool."""
+    return tool_name in VALID_PGX_TOOL_NAMES
 
 
 def _write_scores_result_csv_from_summary(summary_file: str) -> str:
@@ -503,19 +503,19 @@ def seq_length(tokenizer,seq):
 def call_tool(arguments):
     start_time = time.time()
     category = arguments['category']
-    category_is_covaph = is_covaph_category(category)
+    category_is_pgx = is_pgx_category(category)
     
-    if arguments['category']=='qa' or category_is_covaph:
+    if arguments['category']=='qa' or category_is_pgx:
         tool_name = arguments['tool']
         
-        if is_covaph_tool(tool_name):
-            # Optional cache: reuse existing per-question tool results to avoid re-running CoVaPh pipeline
+        if is_pgx_tool(tool_name):
+            # Optional cache: reuse existing per-question tool results to avoid re-running PGx pipeline
             from config import USE_EXISTING_QUESTION_TOOL_RESULTS, QUESTION_TOOL_RESULT_DIR
             import config as _cfg
             _cfg_path = getattr(_cfg, "__file__", None)
             print(f"[Tool Orchestration][Debug] imported config from: {_cfg_path}")
 
-            mode = get_covaph_mode_from_tool(tool_name)
+            mode = get_pgx_mode_from_tool(tool_name)
             question = arguments.get('problem') or arguments.get('question')
             if not question:
                 raise ValueError("Missing required 'problem' or 'question' argument")
@@ -538,31 +538,31 @@ def call_tool(arguments):
             if USE_EXISTING_QUESTION_TOOL_RESULTS and cache_path and cache_path.exists():
                 with open(cache_path, "r", encoding="utf-8") as f:
                     cached = json.load(f)
-                covaph_result = cached.get("result") or {}
+                pgx_result = cached.get("result") or {}
                 # Fill required fields to match normal execution path
-                latency_sec = covaph_result.get('latency_seconds') or 0.0
+                latency_sec = pgx_result.get('latency_seconds') or 0.0
                 arguments['latency'] = latency_sec
                 arguments['tool'] = tool_name
-                arguments['response'] = covaph_result.get('response')
-                arguments['covaph_result'] = covaph_result
-                arguments['cost'] = covaph_result.get('cost', 0)
-                arguments['mode'] = covaph_result.get('mode') or mode
-                print(f"[Tool Orchestration] ✓ Loaded cached CoVaPh result: question_id={question_id}, tool={tool_name} (cache={cache_path.name})")
+                arguments['response'] = pgx_result.get('response')
+                arguments['pgx_result'] = pgx_result
+                arguments['cost'] = pgx_result.get('cost', 0)
+                arguments['mode'] = pgx_result.get('mode') or mode
+                print(f"[Tool Orchestration] ✓ Loaded cached PGx result: question_id={question_id}, tool={tool_name} (cache={cache_path.name})")
                 return arguments
             
-            # Import CoVaPh tool runner.
+            # Import PGx tool runner.
             # Prefer the packaged ToolOrchestra within the current working dir (Ray working_dir_files),
-            # and only fall back to external COVAPH_ROOT if needed.
+            # and only fall back to external PGX_ROOT if needed.
             # Under Ray job submit, `working_dir` is the training folder. Import directly from there.
-            from router_reward.covaph_env import call_covaph_tool
+            from router_reward.pgx_env import call_pgx_tool
             
-            category_label = category if category_is_covaph else 'qa'
-            print(f"[Tool Orchestration] ========== CoVaPh Tool Execution ({category_label} category) ==========")
+            category_label = category if category_is_pgx else 'qa'
+            print(f"[Tool Orchestration] ========== PGx Tool Execution ({category_label} category) ==========")
             print(f"[Tool Orchestration] 🔧 Pipeline Mode: {mode.upper()} (Tool: {tool_name})")
             print(f"[Tool Orchestration] Query ID: {query_id}, Category: {category}")
             
-            covaph_arguments = {
-                'tool': 'covaph_query',  # Keep 'covaph_query' for compatibility with covaph_env
+            pgx_arguments = {
+                'tool': 'pgx_query',  # Keep 'pgx_query' for compatibility with pgx_env
                 'mode': mode,
                 'question': question,
                 'id': str(query_id),
@@ -571,24 +571,24 @@ def call_tool(arguments):
             }
             
             exec_start_time = time.time()
-            covaph_result = call_covaph_tool(covaph_arguments)
+            pgx_result = call_pgx_tool(pgx_arguments)
             exec_end_time = time.time()
             # Use pipeline latency (module 1 start → module 4 end) when available; else wall clock
-            latency_sec = covaph_result.get('latency_seconds')
+            latency_sec = pgx_result.get('latency_seconds')
             if latency_sec is None:
                 latency_sec = exec_end_time - exec_start_time
             arguments['latency'] = latency_sec
             
             arguments['tool'] = tool_name
-            arguments['response'] = covaph_result['response']
-            arguments['covaph_result'] = covaph_result
-            arguments['cost'] = covaph_result['cost']
+            arguments['response'] = pgx_result['response']
+            arguments['pgx_result'] = pgx_result
+            arguments['cost'] = pgx_result['cost']
             arguments['mode'] = mode
             # Preserve item_index if present (needed for marking as used after execution)
             if 'item_index' in arguments:
                 arguments['item_index'] = arguments['item_index']
             
-            print(f"[Tool Orchestration] ✓ CoVaPh tool execution completed ({category_label} category) in {latency_sec:.2f}s (pipeline module1→module4)")
+            print(f"[Tool Orchestration] ✓ PGx tool execution completed ({category_label} category) in {latency_sec:.2f}s (pipeline module1→module4)")
             print(f"[Tool Orchestration] Cost: {arguments['cost']}")
 
             # Save per-question tool result for reuse
@@ -599,50 +599,50 @@ def call_tool(arguments):
                     "question_type": _extract_question_type_from_arguments(arguments, question_id=question_id),
                     "tool_name": str(tool_name),
                     "mode": str(mode),
-                    "result": covaph_result,
+                    "result": pgx_result,
                 }
                 _write_json_atomic(cache_path, payload)
-                print(f"[Tool Orchestration] ✓ Saved cached CoVaPh result to {cache_path}")
+                print(f"[Tool Orchestration] ✓ Saved cached PGx result to {cache_path}")
             
             return arguments
         
-        # Only CoVaPh tools are supported
-        raise ValueError(f"Unsupported tool '{arguments['tool']}' called. Only {VALID_COVAPH_TOOL_NAMES} are allowed in CoVaPh training.")
+        # Only PGx tools are supported
+        raise ValueError(f"Unsupported tool '{arguments['tool']}' called. Only {VALID_PGX_TOOL_NAMES} are allowed in PGx training.")
     elif arguments['category']=='func_call':
-        # For CoVaPh training, only support CoVaPh tools in func_call category
+        # For PGx training, only support PGx tools in func_call category
         assert isinstance(arguments['tool'],list)
         cost = 0
         cur_tool_pricing = arguments['cur_tool_pricing']
         valid_tools = []
         
-        # Filter only CoVaPh tools - remove all other tools
+        # Filter only PGx tools - remove all other tools
         for iter_one_tool_call in arguments['tool']:
             if isinstance(iter_one_tool_call, dict):
                 tool_name = iter_one_tool_call['name']
-                if is_covaph_tool(tool_name):
+                if is_pgx_tool(tool_name):
                     valid_tools.append(iter_one_tool_call)
                 else:
-                    raise ValueError(f"Unsupported tool '{tool_name}' in func_call category. Only {VALID_COVAPH_TOOL_NAMES} are allowed.")
+                    raise ValueError(f"Unsupported tool '{tool_name}' in func_call category. Only {VALID_PGX_TOOL_NAMES} are allowed.")
         
-        # For CoVaPh training, only execute CoVaPh tools directly
+        # For PGx training, only execute PGx tools directly
         # No call_expert or intermediate LLM calls needed
         if len(valid_tools) == 0:
-            raise ValueError("No valid CoVaPh tool call found in func_call category")
+            raise ValueError("No valid PGx tool call found in func_call category")
         
-        # Execute CoVaPh tools directly
+        # Execute PGx tools directly
         for tool_call in valid_tools:
             if isinstance(tool_call, dict):
                 tool_name = tool_call['name']
-                if not is_covaph_tool(tool_name):
-                    raise ValueError(f"Tool '{tool_name}' is not a CoVaPh tool")
+                if not is_pgx_tool(tool_name):
+                    raise ValueError(f"Tool '{tool_name}' is not a PGx tool")
 
-                # Optional cache: reuse existing per-question tool results to avoid re-running CoVaPh pipeline
+                # Optional cache: reuse existing per-question tool results to avoid re-running PGx pipeline
                 from config import USE_EXISTING_QUESTION_TOOL_RESULTS, QUESTION_TOOL_RESULT_DIR
                 import config as _cfg
                 _cfg_path = getattr(_cfg, "__file__", None)
                 print(f"[Tool Orchestration][Debug] imported config from: {_cfg_path}")
 
-                mode = get_covaph_mode_from_tool(tool_name)
+                mode = get_pgx_mode_from_tool(tool_name)
                 question = arguments.get('problem') or arguments.get('question')
                 if not question:
                     raise ValueError("Missing required 'problem' or 'question' argument")
@@ -664,34 +664,34 @@ def call_tool(arguments):
                 if USE_EXISTING_QUESTION_TOOL_RESULTS and cache_path and cache_path.exists():
                     with open(cache_path, "r", encoding="utf-8") as f:
                         cached = json.load(f)
-                    covaph_result = cached.get("result") or {}
-                    latency_sec = covaph_result.get('latency_seconds') or 0.0
+                    pgx_result = cached.get("result") or {}
+                    latency_sec = pgx_result.get('latency_seconds') or 0.0
                     arguments['latency'] = latency_sec
-                    print(f"[Tool Orchestration] ✓ Loaded cached CoVaPh result (func_call): question_id={question_id}, tool={tool_name} (cache={cache_path.name})")
-                    arguments['tool'] = 'covaph_query'
-                    arguments['response'] = covaph_result.get('response')
-                    arguments['covaph_result'] = covaph_result
-                    arguments['cost'] = covaph_result.get('cost', 0)
-                    arguments['used_llm'] = 'covaph_pipeline'
+                    print(f"[Tool Orchestration] ✓ Loaded cached PGx result (func_call): question_id={question_id}, tool={tool_name} (cache={cache_path.name})")
+                    arguments['tool'] = 'pgx_query'
+                    arguments['response'] = pgx_result.get('response')
+                    arguments['pgx_result'] = pgx_result
+                    arguments['cost'] = pgx_result.get('cost', 0)
+                    arguments['used_llm'] = 'pgx_pipeline'
                     if 'tokenizer' in arguments:
                         arguments.pop('tokenizer')
                     return arguments
                 
-                # Setup COVAPH_ROOT path - must be set via environment variable
-                # COVAPH_ROOT should point to ToolOrchestra directory
-                # Import CoVaPh tool runner.
+                # Setup PGX_ROOT path - must be set via environment variable
+                # PGX_ROOT should point to ToolOrchestra directory
+                # Import PGx tool runner.
                 # Prefer the packaged ToolOrchestra within the current working dir (Ray working_dir_files),
-                # and only fall back to external COVAPH_ROOT if needed.
+                # and only fall back to external PGX_ROOT if needed.
                 # Under Ray job submit, `working_dir` is the training folder. Import directly from there.
-                from router_reward.covaph_env import call_covaph_tool
+                from router_reward.pgx_env import call_pgx_tool
                 
-                print(f"[Tool Orchestration] ========== CoVaPh Tool Execution (func_call category) ==========")
+                print(f"[Tool Orchestration] ========== PGx Tool Execution (func_call category) ==========")
                 print(f"[Tool Orchestration] Tool: {tool_name}, Mode: {mode}, Query ID: {query_id}")
                 print(f"[Tool Orchestration] Question: {question[:200]}...")
                 print(f"[Tool Orchestration] Output Dir: {cur_output_dir}")
                 
-                covaph_arguments = {
-                    'tool': 'covaph_query',  # Keep 'covaph_query' for compatibility with covaph_env
+                pgx_arguments = {
+                    'tool': 'pgx_query',  # Keep 'pgx_query' for compatibility with pgx_env
                     'mode': mode,
                     'question': question,
                     'id': str(query_id),
@@ -700,21 +700,21 @@ def call_tool(arguments):
                 }
                 
                 exec_start_time = time.time()
-                covaph_result = call_covaph_tool(covaph_arguments)
+                pgx_result = call_pgx_tool(pgx_arguments)
                 exec_end_time = time.time()
-                latency_sec = covaph_result.get('latency_seconds')
+                latency_sec = pgx_result.get('latency_seconds')
                 if latency_sec is None:
                     latency_sec = exec_end_time - exec_start_time
                 arguments['latency'] = latency_sec
                 
-                print(f"[Tool Orchestration] ✓ CoVaPh tool execution completed (func_call category) in {latency_sec:.2f}s (pipeline module1→module4)")
-                print(f"[Tool Orchestration] Tool: {tool_name}, Cost: {covaph_result['cost']}")
+                print(f"[Tool Orchestration] ✓ PGx tool execution completed (func_call category) in {latency_sec:.2f}s (pipeline module1→module4)")
+                print(f"[Tool Orchestration] Tool: {tool_name}, Cost: {pgx_result['cost']}")
                 
-                arguments['tool'] = 'covaph_query'
-                arguments['response'] = covaph_result['response']
-                arguments['covaph_result'] = covaph_result
-                arguments['cost'] = covaph_result['cost']
-                arguments['used_llm'] = 'covaph_pipeline'
+                arguments['tool'] = 'pgx_query'
+                arguments['response'] = pgx_result['response']
+                arguments['pgx_result'] = pgx_result
+                arguments['cost'] = pgx_result['cost']
+                arguments['used_llm'] = 'pgx_pipeline'
 
                 # Save per-question tool result for reuse
                 if cache_path:
@@ -724,20 +724,20 @@ def call_tool(arguments):
                         "question_type": _extract_question_type_from_arguments(arguments, question_id=question_id),
                         "tool_name": str(tool_name),
                         "mode": str(mode),
-                        "result": covaph_result,
+                        "result": pgx_result,
                     }
                     _write_json_atomic(cache_path, payload)
-                    print(f"[Tool Orchestration] ✓ Saved cached CoVaPh result to {cache_path}")
+                    print(f"[Tool Orchestration] ✓ Saved cached PGx result to {cache_path}")
                 
                 if 'tokenizer' in arguments:
                     arguments.pop('tokenizer')
                 return arguments
         
-        raise ValueError("No valid CoVaPh tool call executed in func_call category")
+        raise ValueError("No valid PGx tool call executed in func_call category")
         
     else:
-        # Unknown category - not supported for CoVaPh training
-        raise ValueError(f"Unknown category '{arguments['category']}' - only 'qa' and 'func_call' are supported for CoVaPh training.")
+        # Unknown category - not supported for PGx training
+        raise ValueError(f"Unknown category '{arguments['category']}' - only 'qa' and 'func_call' are supported for PGx training.")
 
 
 def call_tool_all(all_arguments):
@@ -857,13 +857,13 @@ class LLMGenerationManager:
             max_prompt_length=config.max_prompt_length
         ))
 
-        # Active CoVaPh tool set (single source of truth = the selected tool-config JSON).
+        # Active PGx tool set (single source of truth = the selected tool-config JSON).
         # hint / fallback / choke-point / reward-guard all read this, so dropping or re-adding
         # a tool is a TOOL_CONFIG change (+ data), not a code change.
         self.train_tool_config_path = train_tool_config_path
         self.active_tools = _load_active_tools(train_tool_config_path)
         self.fallback_tool = "tool_b" if "tool_b" in self.active_tools else self.active_tools[0]
-        print(f"[Tool Orchestration] Active CoVaPh tools = {self.active_tools} (from {train_tool_config_path!r}); fallback = {self.fallback_tool}")
+        print(f"[Tool Orchestration] Active PGx tools = {self.active_tools} (from {train_tool_config_path!r}); fallback = {self.fallback_tool}")
 
     def _batch_tokenize(self, responses: List[str]) -> torch.Tensor:
         """Tokenize a batch of responses."""
@@ -1128,7 +1128,7 @@ class LLMGenerationManager:
                             _tname = _first[0]
                         elif isinstance(_first, str):
                             _tname = _first
-                    tool_name_by_rollout_id[_rid] = _tname if _tname in VALID_COVAPH_TOOL_NAMES else None
+                    tool_name_by_rollout_id[_rid] = _tname if _tname in VALID_PGX_TOOL_NAMES else None
 
             print(f"[Reward Model] Computing normalized reward scores using AnswerRewardEvaluator...")
             if REWARD_EVALUATION_MODE == "batch_per_question":
@@ -1463,8 +1463,8 @@ class LLMGenerationManager:
                                 tool_name = first[0]
                             elif isinstance(first, str):
                                 tool_name = first
-                        valid_tool = tool_name if tool_name and tool_name in VALID_COVAPH_TOOL_NAMES else None
-                        pipeline_by_rollout_id[rollout_id] = get_covaph_mode_from_tool(valid_tool) if valid_tool else None
+                        valid_tool = tool_name if tool_name and tool_name in VALID_PGX_TOOL_NAMES else None
+                        pipeline_by_rollout_id[rollout_id] = get_pgx_mode_from_tool(valid_tool) if valid_tool else None
                         tool_name_by_rollout_id[rollout_id] = valid_tool
                 # Level per rollout (key-derived: hard / filtered / simple)
                 level_by_rollout_id = {}
@@ -1522,7 +1522,7 @@ class LLMGenerationManager:
                 # Always run regardless of REWARD_EVAL_MODE — any time we paid for a Grok call
                 # we should capture it so future runs hit the cache.
                 # NOTE: cost / latency_seconds / input_tokens / output_tokens are NOT captured here
-                # because they live at the tool-execution layer (covaph_env.py) and aren't passed
+                # because they live at the tool-execution layer (pgx_env.py) and aren't passed
                 # into _process_weighted_scores. Existing cache entries built from detailed_results
                 # also lack these for ~half the entries, so this is consistent behavior.
                 if _cache_misses > 0:
@@ -1712,7 +1712,7 @@ class LLMGenerationManager:
         Returns:
             Dictionary containing initialized variables
         """
-        # Handle both 'problem' (for QA datasets) and 'question' (for CoVaPh datasets)
+        # Handle both 'problem' (for QA datasets) and 'question' (for PGx datasets)
         if 'problem' in gen_batch.non_tensor_batch:
             problem_key = 'problem'
         elif 'question' in gen_batch.non_tensor_batch:
@@ -1782,9 +1782,9 @@ class LLMGenerationManager:
         if os.path.isdir(tmp_transfer_dir):
             shutil.rmtree(tmp_transfer_dir)
         
-        # Track which items have already called a CoVaPh tool across all steps
-        # This ensures that within one question-to-answer flow, only one CoVaPh tool can be used
-        covaph_tool_used_per_item = [False] * loop_batch_size
+        # Track which items have already called a PGx tool across all steps
+        # This ensures that within one question-to-answer flow, only one PGx tool can be used
+        pgx_tool_used_per_item = [False] * loop_batch_size
         
         return {
             'problem_key': problem_key,
@@ -1825,7 +1825,7 @@ class LLMGenerationManager:
             'cur_batch_repeat_ids': cur_batch_repeat_ids,
             'cur_batch_output_files': cur_batch_output_files,
             'my_output_dir': my_output_dir,
-            'covaph_tool_used_per_item': covaph_tool_used_per_item,
+            'pgx_tool_used_per_item': pgx_tool_used_per_item,
         }
 
     def run_llm_loop(self, gen_batch,tokenizer_config,global_steps,topk_doc,use_llm_reward,efficiency_reward,exp_tag,use_qa_reward):
@@ -1893,7 +1893,7 @@ class LLMGenerationManager:
         cur_batch_repeat_ids = init_vars['cur_batch_repeat_ids']
         cur_batch_output_files = init_vars['cur_batch_output_files']
         my_output_dir = init_vars['my_output_dir']
-        covaph_tool_used_per_item = init_vars['covaph_tool_used_per_item']
+        pgx_tool_used_per_item = init_vars['pgx_tool_used_per_item']
         
         rollings = gen_batch
         base_batch_size = loop_batch_size  # number of prompts; when rollout.n>1 we have loop_batch_size * n_rollouts_per_prompt items
@@ -2100,8 +2100,8 @@ class LLMGenerationManager:
                     if step==1:
                         cur_batch_output_files.append(cur_transfer_dir)
                 else:
-                    # Handle other category types (e.g., CoVaPh categories like 'dosing_recommendation', 'safety_recommendation', etc.)
-                    # For CoVaPh, we should treat them as func_call since they use tool calling
+                    # Handle other category types (e.g., PGx categories like 'dosing_recommendation', 'safety_recommendation', etc.)
+                    # For PGx, we should treat them as func_call since they use tool calling
                     # Extract problem/question for fallback
                     problem_key = 'problem' if 'problem' in gen_batch.non_tensor_batch else 'question'
                     if problem_key in gen_batch.non_tensor_batch:
@@ -2121,14 +2121,14 @@ class LLMGenerationManager:
                     else:
                         tools = []
                     
-                    # For CoVaPh categories, create output directory similar to func_call
+                    # For PGx categories, create output directory similar to func_call
                     # This is needed for reward reading later
                     iter_rollout_id = f"{item_index}_____{item_repeat_id}"
                     cur_transfer_dir = os.path.join(gen_batch.non_tensor_batch['cur_transfer_dir'][base_idx],str(global_steps),iter_rollout_id)
                     os.makedirs(cur_transfer_dir, exist_ok=True)
                     os.makedirs(os.path.join(cur_transfer_dir, 'output'), exist_ok=True)
                     
-                    # For CoVaPh categories, use the prompt from the data (which includes system message with tool instructions)
+                    # For PGx categories, use the prompt from the data (which includes system message with tool instructions)
                     # Check if prompt exists in the data
                     if 'prompt' in gen_batch.non_tensor_batch:
                         chat = gen_batch.non_tensor_batch['prompt'][base_idx]
@@ -2148,10 +2148,10 @@ class LLMGenerationManager:
                         # Ensure tools are passed correctly
                         if len(tools) == 0 and len(chat) > 0:
                             # Tools should be loaded from tools field, but if empty, try to infer from prompt
-                            print(f"[Tool Orchestration] CoVaPh category '{category}' (idx={item_idx}): using prompt from data, tools={len(tools)} tools")
+                            print(f"[Tool Orchestration] PGx category '{category}' (idx={item_idx}): using prompt from data, tools={len(tools)} tools")
                     else:
                         # Fallback: create a simple chat template (still add diversity hint when enabled)
-                        print(f"[Tool Orchestration] WARNING: CoVaPh category '{category}' (idx={item_idx}) has no 'prompt' field, using fallback chat template")
+                        print(f"[Tool Orchestration] WARNING: PGx category '{category}' (idx={item_idx}) has no 'prompt' field, using fallback chat template")
                         user_content = problem
                         if getattr(self.config, 'rollout_diversity_hint_until', -1) > 0 and global_steps <= self.config.rollout_diversity_hint_until:
                             preferred_tool = self.active_tools[(int(item_repeat_id) + int(item_index)) % len(self.active_tools)]
@@ -2161,7 +2161,7 @@ class LLMGenerationManager:
                             {"role": "user", "content": user_content}
                         ]
                     
-                    # Log tools availability for CoVaPh (tools is already converted to list above)
+                    # Log tools availability for PGx (tools is already converted to list above)
                     if len(tools) > 0:
                         tool_names = []
                         for t in tools:
@@ -2175,9 +2175,9 @@ class LLMGenerationManager:
                                     raise ValueError(f"Tool definition missing 'name' field: {t}")
                             else:
                                 tool_names.append(str(t))
-                        print(f"[Tool Orchestration] CoVaPh category '{category}' (idx={item_idx}): loaded {len(tools)} tool(s): {tool_names}")
+                        print(f"[Tool Orchestration] PGx category '{category}' (idx={item_idx}): loaded {len(tools)} tool(s): {tool_names}")
                         
-                        # Validate that only CoVaPh tools are present - filter out any non-CoVaPh tools
+                        # Validate that only PGx tools are present - filter out any non-PGx tools
                         filtered_tools = []
                         for t in tools:
                             if isinstance(t, dict):
@@ -2188,16 +2188,16 @@ class LLMGenerationManager:
                                     tool_name = t['name']
                                 else:
                                     raise ValueError(f"Tool definition missing 'name' field: {t}")
-                                if is_covaph_tool(tool_name):
+                                if is_pgx_tool(tool_name):
                                     filtered_tools.append(t)
                                 else:
-                                    raise ValueError(f"Non-CoVaPh tool '{tool_name}' found in tools list. Only {VALID_COVAPH_TOOL_NAMES} are allowed.")
+                                    raise ValueError(f"Non-PGx tool '{tool_name}' found in tools list. Only {VALID_PGX_TOOL_NAMES} are allowed.")
                         if len(filtered_tools) != len(tools):
-                            non_covaph_tools = [name for name in tool_names if not is_covaph_tool(name)]
-                            print(f"[Tool Orchestration] ERROR: Found non-CoVaPh tools in tools list: {non_covaph_tools}. Filtering them out - only {VALID_COVAPH_TOOL_NAMES} will be used.")
+                            non_pgx_tools = [name for name in tool_names if not is_pgx_tool(name)]
+                            print(f"[Tool Orchestration] ERROR: Found non-PGx tools in tools list: {non_pgx_tools}. Filtering them out - only {VALID_PGX_TOOL_NAMES} will be used.")
                             tools = filtered_tools
                     else:
-                        print(f"[Tool Orchestration] WARNING: CoVaPh category '{category}' (idx={item_idx}): no tools loaded! This may prevent tool calling.")
+                        print(f"[Tool Orchestration] WARNING: PGx category '{category}' (idx={item_idx}): no tools loaded! This may prevent tool calling.")
                     
                     all_transfer_dirs.append(cur_transfer_dir)
                     all_input_messages.append(chat)
@@ -2217,7 +2217,7 @@ class LLMGenerationManager:
                 elif not isinstance(tools, list):
                     tools = list(tools) if hasattr(tools, '__iter__') else []
 
-                # CoVaPh orchestrator: render the tool list INLINE in the system prompt (baked into the
+                # PGx orchestrator: render the tool list INLINE in the system prompt (baked into the
                 # data), NOT via the chat template's tools= block (which injects "You may call one or more
                 # functions" + the <tools> schema). Pass tools=None so that block is gone, and
                 # enable_thinking=True so the orchestrator reasons before emitting the tool JSON (thinking-off
@@ -2258,25 +2258,25 @@ class LLMGenerationManager:
             meta_info = gen_output.meta_info
             responses_ids, responses_str = self._postprocess_responses(gen_output.batch['responses'])
 
-            # Parse-failure retry: if any CoVaPh-category sample produces an
+            # Parse-failure retry: if any PGx-category sample produces an
             # unparseable response, regenerate just those samples up to
-            # COVAPH_MAX_PARSE_RETRY times. Done BEFORE n_expand and downstream
+            # PGX_MAX_PARSE_RETRY times. Done BEFORE n_expand and downstream
             # state mutations so we can simply replace rows in responses_ids/str.
             # After exhausting retries, downstream postprocess_predictions will
             # raise (with full prediction dump) as before.
-            COVAPH_MAX_PARSE_RETRY = 2
+            PGX_MAX_PARSE_RETRY = 2
             _active_local_idxs = [i for i, m in enumerate(active_mask.tolist()) if m]
             _active_categories = [all_categories[i] for i in _active_local_idxs]
-            for _retry_attempt in range(COVAPH_MAX_PARSE_RETRY):
+            for _retry_attempt in range(PGX_MAX_PARSE_RETRY):
                 _bad_idxs = [
                     j for j, (_resp, _cat) in enumerate(zip(responses_str, _active_categories))
-                    if is_covaph_category(_cat) and not _can_parse_covaph_prediction(_resp)
+                    if is_pgx_category(_cat) and not _can_parse_pgx_prediction(_resp)
                 ]
                 if not _bad_idxs:
                     break
                 print(
-                    f"[Tool Orchestration] Parse-retry {_retry_attempt+1}/{COVAPH_MAX_PARSE_RETRY}: "
-                    f"{len(_bad_idxs)} unparseable CoVaPh sample(s) at active idxs={_bad_idxs} — regenerating."
+                    f"[Tool Orchestration] Parse-retry {_retry_attempt+1}/{PGX_MAX_PARSE_RETRY}: "
+                    f"{len(_bad_idxs)} unparseable PGx sample(s) at active idxs={_bad_idxs} — regenerating."
                 )
                 _bad_batch_dict = {k: v[_bad_idxs] for k, v in rollings_active.batch.items()}
                 _bad_batch = DataProto.from_dict(_bad_batch_dict)
@@ -2298,14 +2298,14 @@ class LLMGenerationManager:
             else:
                 n_expand = 1
             
-            # Log model responses for CoVaPh debugging
+            # Log model responses for PGx debugging
             if global_steps % 10 == 0 or os.getenv("VERBOSE_TOOL_LOG", "0") == "1":
                 print(f"[Tool Orchestration] Model responses preview (step {step}, global_step {global_steps}):")
                 for idx, resp_str in enumerate(responses_str[:min(3, len(responses_str))]):
                     category = all_categories[idx] if idx < len(all_categories) else 'unknown'
                     print(f"  Response {idx} (category={category}): {resp_str[:300]}...")
                     # Check if contains tool call indicators
-                    if 'covaph_query' in resp_str.lower() or '<tool_call>' in resp_str or 'tool_call' in resp_str.lower():
+                    if 'pgx_query' in resp_str.lower() or '<tool_call>' in resp_str or 'tool_call' in resp_str.lower():
                         print(f"    ⚠️  Contains potential tool call keywords!")
             
             input_padding = torch.ones((len(rollings_active.batch['input_ids']), tokenizer_config['max_response_length']+tokenizer_config['max_prompt_length']-len(rollings_active.batch['input_ids'][0])-len(responses_ids[0])), dtype=torch.long)*tokenizer.pad_token_id
@@ -2362,7 +2362,7 @@ class LLMGenerationManager:
                 all_categories = _repeat_for_rollout_n(all_categories, n_expand)
                 all_indices = _repeat_for_rollout_n(all_indices, n_expand)
                 all_levels = _repeat_for_rollout_n(all_levels, n_expand)
-                covaph_tool_used_per_item = _repeat_for_rollout_n(covaph_tool_used_per_item, n_expand)
+                pgx_tool_used_per_item = _repeat_for_rollout_n(pgx_tool_used_per_item, n_expand)
             if n_expand <= 1:
                 responses_ids, responses_str = self.tensor_fn._example_level_pad(responses_ids, responses_str, active_mask)
             else:
@@ -2438,15 +2438,15 @@ class LLMGenerationManager:
             _answers = cur_answers if n_expand > 1 else gen_batch.non_tensor_batch['answer']
             # Pass base path so execute_predictions can put each item (n_agent rollout) in rollout_{i}/code_execution
             cur_output_dir_base = os.path.join(my_output_dir, f"global_step_{global_steps}", f"rollout_step_{step}")
-            new_documents, new_code, new_attempts, dones, new_attempt_correct, new_costs, tool_summary,format_correctness, latencies, all_attempt_results,valid_answers_generated,used_llms, updated_covaph_tool_used = self.execute_predictions(
+            new_documents, new_code, new_attempts, dones, new_attempt_correct, new_costs, tool_summary,format_correctness, latencies, all_attempt_results,valid_answers_generated,used_llms, updated_pgx_tool_used = self.execute_predictions(
                 responses_str, self.tokenizer.pad_token, active_mask, retrieved_documents=retrieved_documents, user_problems=_user_problems,
                 code_snippets=code_snippets,attempts=attempts,tokenizer=tokenizer,vllm_model_configs=vllm_model_configs,cur_output_dir=cur_output_dir_base,
                 answers=_answers,total_costs=total_costs,all_categories=all_categories,all_transfer_dirs=all_transfer_dirs,
                 all_input_messages=all_input_messages,all_input_tools=all_input_tools,all_transfer_paths=all_transfer_paths,all_model_mappings=all_model_mappings,
-                all_tool_pricing=all_tool_pricing,all_indices=all_indices,all_levels=all_levels,topk_doc=topk_doc,covaph_tool_used_per_item=covaph_tool_used_per_item
+                all_tool_pricing=all_tool_pricing,all_indices=all_indices,all_levels=all_levels,topk_doc=topk_doc,pgx_tool_used_per_item=pgx_tool_used_per_item
             )
-            # Update tracking: if a CoVaPh tool was used in this step, mark it
-            covaph_tool_used_per_item = updated_covaph_tool_used
+            # Update tracking: if a PGx tool was used in this step, mark it
+            pgx_tool_used_per_item = updated_pgx_tool_used
             for tmp_tool_l1 in tool_summary:
                 assert isinstance(tmp_tool_l1,list)
                 for tmp_tool in tmp_tool_l1:
@@ -2514,9 +2514,9 @@ class LLMGenerationManager:
         # ==================== Post-Processing: Extract Results and Metadata ====================
         # Process attempts to extract valid answers, response_json, and pre-computed eval results
         valid_answers = {}
-        # Build mapping from rollout_id to response_json (for CoVaPh results)
+        # Build mapping from rollout_id to response_json (for PGx results)
         response_json_by_rollout_id = {}  # rollout_id -> response_json dict
-        # Build mapping from rollout_id to pre-computed eval_result (from covaph_env.py)
+        # Build mapping from rollout_id to pre-computed eval_result (from pgx_env.py)
         # This avoids duplicate LLM evaluation calls
         precomputed_eval_results_by_rollout_id = {}  # rollout_id -> eval_result dict
         assert len(attempts)==len(cur_batch_indices)
@@ -2530,17 +2530,17 @@ class LLMGenerationManager:
             for tmp_a in a:
                 if len(tmp_a['answer'].strip())>0:
                     valid_answers[rollout_id] = True
-                # Extract response_json and eval_result from CoVaPh results
-                if 'covaph_result' in tmp_a:
-                    covaph_result = tmp_a['covaph_result']
-                    response_json = covaph_result.get('response_json') or covaph_result.get('final_answer_json')
+                # Extract response_json and eval_result from PGx results
+                if 'pgx_result' in tmp_a:
+                    pgx_result = tmp_a['pgx_result']
+                    response_json = pgx_result.get('response_json') or pgx_result.get('final_answer_json')
                     if response_json and isinstance(response_json, dict):
                         response_json_by_rollout_id[rollout_id] = response_json
-                    # Extract pre-computed eval_result if available (from covaph_env.py call_tool)
-                    eval_result = covaph_result.get('eval_result')
+                    # Extract pre-computed eval_result if available (from pgx_env.py call_tool)
+                    eval_result = pgx_result.get('eval_result')
                     if eval_result and isinstance(eval_result, dict) and 'weighted_score' in eval_result:
                         precomputed_eval_results_by_rollout_id[rollout_id] = eval_result
-                        print(f"[Reward Model] Found pre-computed eval_result for rollout {rollout_id} (from covaph_env.py)")
+                        print(f"[Reward Model] Found pre-computed eval_result for rollout {rollout_id} (from pgx_env.py)")
             correct = 0
             for subfile in os.listdir(os.path.join(tmp_output_file,'output')):
                 if subfile.endswith('.json'):
@@ -3229,14 +3229,14 @@ class LLMGenerationManager:
     def execute_predictions(self, predictions: List[str], pad_token: str, active_mask=None, do_search=True, retrieved_documents=None, user_problems=None,
                                 code_snippets=None, attempts=None, tokenizer=None,vllm_model_configs=None,cur_output_dir=None,answers=None,
                                 total_costs=None,all_categories=None,all_transfer_dirs=None,all_input_messages=None,all_input_tools=None,all_transfer_paths=None,
-                                all_model_mappings=None,all_tool_pricing=None,all_indices=None,all_levels=None,topk_doc=30,covaph_tool_used_per_item=None):
+                                all_model_mappings=None,all_tool_pricing=None,all_indices=None,all_levels=None,topk_doc=30,pgx_tool_used_per_item=None):
         # Initialize tracking if not provided
-        if covaph_tool_used_per_item is None:
-            covaph_tool_used_per_item = [False] * len(predictions)
+        if pgx_tool_used_per_item is None:
+            pgx_tool_used_per_item = [False] * len(predictions)
         
         # Create local reference to module-level functions to avoid UnboundLocalError
-        _is_covaph_tool = is_covaph_tool
-        _get_mode = get_covaph_mode_from_tool
+        _is_pgx_tool = is_pgx_tool
+        _get_mode = get_pgx_mode_from_tool
         
         # Log raw predictions before parsing
         verbose_log = os.getenv("VERBOSE_TOOL_LOG", "0") == "1"
@@ -3248,18 +3248,18 @@ class LLMGenerationManager:
         cur_tool_calls, contents, format_correctness = self.postprocess_predictions(predictions,all_categories)
         
         # Log parsed tool calls and pipeline modes
-        covaph_tool_calls_found = 0
+        pgx_tool_calls_found = 0
         selected_modes = []  # Track selected pipeline modes
         for idx, (tool_call_list, cat) in enumerate(zip(cur_tool_calls, all_categories)):
             if tool_call_list:
                 for tc in tool_call_list:
                     if isinstance(tc, dict):
                         tool_name = tc['name']
-                        if _is_covaph_tool(tool_name):
-                            covaph_tool_calls_found += 1
+                        if _is_pgx_tool(tool_name):
+                            pgx_tool_calls_found += 1
                             mode = _get_mode(tool_name)
                             selected_modes.append((idx, mode, tool_name, cat))
-                            print(f"[Tool Orchestration] ✓ Parsed CoVaPh tool call (category={cat}, idx={idx}): tool={tool_name}, mode={mode}")
+                            print(f"[Tool Orchestration] ✓ Parsed PGx tool call (category={cat}, idx={idx}): tool={tool_name}, mode={mode}")
         
         # Print summary of selected pipeline modes
         if selected_modes:
@@ -3268,8 +3268,8 @@ class LLMGenerationManager:
                 print(f"[Actor Pipeline Selection]   Sample {idx}: Pipeline Mode = {mode.upper()} (Tool: {tool_name}, Category: {cat})")
             print(f"[Actor Pipeline Selection] ========== Total: {len(selected_modes)} pipeline mode(s) selected ==========")
         
-        if covaph_tool_calls_found == 0:
-            print(f"[Tool Orchestration] ⚠️  No CoVaPh tool calls parsed from {len(predictions)} predictions")
+        if pgx_tool_calls_found == 0:
+            print(f"[Tool Orchestration] ⚠️  No PGx tool calls parsed from {len(predictions)} predictions")
             print(f"  Categories found: {set(all_categories)}")
             print(f"  Format correctness: {sum(format_correctness)}/{len(format_correctness)}")
 
@@ -3318,17 +3318,17 @@ class LLMGenerationManager:
                 except Exception as e:
                     print(f"[Tool Orchestration] Warning: failed to save actor reasoning for rollout_{i}: {e}")
             call_tool_arguments = []
-            is_covaph_tool_category = is_covaph_category(cur_category)
-            if cur_category=='qa' or is_covaph_tool_category:
+            is_pgx_tool_category = is_pgx_category(cur_category)
+            if cur_category=='qa' or is_pgx_tool_category:
                 # Debug: Log tool calls received for this item
-                print(f"[Tool Orchestration] Processing item {i} (category={cur_category}, active={active}): {len(iter_tool_calls) if isinstance(iter_tool_calls, list) else 'N/A'} tool call(s), already_used={covaph_tool_used_per_item[i] if i < len(covaph_tool_used_per_item) else 'N/A'}")
+                print(f"[Tool Orchestration] Processing item {i} (category={cur_category}, active={active}): {len(iter_tool_calls) if isinstance(iter_tool_calls, list) else 'N/A'} tool call(s), already_used={pgx_tool_used_per_item[i] if i < len(pgx_tool_used_per_item) else 'N/A'}")
                 
-                # Check if this item has already used a CoVaPh tool in a previous step
-                if i < len(covaph_tool_used_per_item) and covaph_tool_used_per_item[i]:
-                    raise ValueError(f"Item {i} has already used a CoVaPh tool in a previous step. Cannot use CoVaPh tool again for the same item.")
+                # Check if this item has already used a PGx tool in a previous step
+                if i < len(pgx_tool_used_per_item) and pgx_tool_used_per_item[i]:
+                    raise ValueError(f"Item {i} has already used a PGx tool in a previous step. Cannot use PGx tool again for the same item.")
                 
-                added_covaph_tools = set()
-                covaph_tool_executed = False
+                added_pgx_tools = set()
+                pgx_tool_executed = False
                 print(f"[Tool Orchestration] Item {i}: Processing {len(iter_tool_calls)} tool call(s) for category {cur_category}")
                 for tid,tool_call in enumerate(iter_tool_calls):
                     if not isinstance(tool_call, dict):
@@ -3347,9 +3347,9 @@ class LLMGenerationManager:
                     tool_name_in_call = tool_call.get('name')
                     if not tool_name_in_call:
                         raise ValueError(f"Item {i}, tid={tid}: Tool call missing required 'name' field")
-                    is_covaph_call = _is_covaph_tool(tool_name_in_call)
-                    if is_covaph_call:
-                        print(f"[Tool Orchestration] Validating CoVaPh tool call (qa, i={i}, tid={tid}): {tool_call}")
+                    is_pgx_call = _is_pgx_tool(tool_name_in_call)
+                    if is_pgx_call:
+                        print(f"[Tool Orchestration] Validating PGx tool call (qa, i={i}, tid={tid}): {tool_call}")
                     
                     if not active:
                         raise ValueError(f"Item {i} is not active, cannot process tool call")
@@ -3368,44 +3368,44 @@ class LLMGenerationManager:
                     if tool_call_name not in ALL_TOOLS:
                         raise ValueError(f"Item {i}, tid={tid}: Tool '{tool_call_name}' not in ALL_TOOLS. Allowed tools: {list(ALL_TOOLS.keys())}")
                     
-                    if not _is_covaph_tool(tool_call_name):
-                        raise ValueError(f"Tool '{tool_call_name}' is not allowed in CoVaPh training. Only {VALID_COVAPH_TOOL_NAMES} are allowed. (category={cur_category}, i={i})")
+                    if not _is_pgx_tool(tool_call_name):
+                        raise ValueError(f"Tool '{tool_call_name}' is not allowed in PGx training. Only {VALID_PGX_TOOL_NAMES} are allowed. (category={cur_category}, i={i})")
                     
                     valid_tool_call = True
                     
                     # Ensure only one tool is selected per turn
-                    if is_covaph_call:
+                    if is_pgx_call:
                         tool_name = tool_call['name']
                         mode = _get_mode(tool_name)
-                        if len(added_covaph_tools) > 0:
-                            first_tool = list(added_covaph_tools)[0]
+                        if len(added_pgx_tools) > 0:
+                            first_tool = list(added_pgx_tools)[0]
                             first_mode = _get_mode(first_tool)
-                            raise ValueError(f"Multiple CoVaPh tool calls detected (i={i}, tid={tid}). Only one CoVaPh tool call is allowed per turn. Already added: {first_tool} (mode={first_mode}), trying to add: {tool_name} (mode={mode}).")
-                        added_covaph_tools.add(tool_name)
+                            raise ValueError(f"Multiple PGx tool calls detected (i={i}, tid={tid}). Only one PGx tool call is allowed per turn. Already added: {first_tool} (mode={first_mode}), trying to add: {tool_name} (mode={mode}).")
+                        added_pgx_tools.add(tool_name)
                         print(f"[Actor Pipeline Selection] Sample {i}: Selected Pipeline Mode = {mode.upper()} (Tool: {tool_name}, Category: {cur_category})")
-                        print(f"[Tool Orchestration] ✓ CoVaPh tool call validated (qa, i={i}): tool={tool_name}, mode={mode}")
+                        print(f"[Tool Orchestration] ✓ PGx tool call validated (qa, i={i}): tool={tool_name}, mode={mode}")
                     
-                    # Validate tool signature (CoVaPh tools have no parameters)
+                    # Validate tool signature (PGx tools have no parameters)
                     tool_call_name = tool_call['name']
                     func_signature = ALL_TOOLS.get(tool_call_name, {})  # Use get with default {} as this is a lookup
                     tool_arguments = tool_call.get('arguments', {})  # arguments may not exist for tools with no parameters
-                    tool_arguments = _normalize_covaph_tool_arguments(tool_arguments)
+                    tool_arguments = _normalize_pgx_tool_arguments(tool_arguments)
                     if func_signature:
                         if not isinstance(tool_arguments, dict):
                             raise TypeError(f"Tool call 'arguments' must be a dict, got {type(tool_arguments)} (qa, i={i})")
                         for parameter_name, parameter_values in func_signature.items():
                             if parameter_name not in tool_arguments:
-                                raise ValueError(f"CoVaPh tool call missing required parameter '{parameter_name}' (qa, i={i})")
+                                raise ValueError(f"PGx tool call missing required parameter '{parameter_name}' (qa, i={i})")
                             if (tool_arguments[parameter_name] not in parameter_values) and parameter_values != 'any':
-                                raise ValueError(f"CoVaPh tool call invalid parameter value '{parameter_name}'='{tool_arguments[parameter_name]}' (qa, i={i}). Valid values: {parameter_values}")
+                                raise ValueError(f"PGx tool call invalid parameter value '{parameter_name}'='{tool_arguments[parameter_name]}' (qa, i={i}). Valid values: {parameter_values}")
                     elif tool_arguments not in [{}, None]:
                         if not isinstance(tool_arguments, dict):
-                            print(f"[Tool Orchestration][FAIL-SOFT] CoVaPh tool '{tool_call_name}' got non-dict arguments {type(tool_arguments)} (qa, i={i}); coercing to empty.")
+                            print(f"[Tool Orchestration][FAIL-SOFT] PGx tool '{tool_call_name}' got non-dict arguments {type(tool_arguments)} (qa, i={i}); coercing to empty.")
                             tool_call['arguments'] = {}
                         else:
                             unexpected_params = list(tool_arguments.keys())
                             if unexpected_params:
-                                print(f"[Tool Orchestration][FAIL-SOFT] CoVaPh tool '{tool_call_name}' does not require parameters, but found: {unexpected_params} (qa, i={i}); stripping.")
+                                print(f"[Tool Orchestration][FAIL-SOFT] PGx tool '{tool_call_name}' does not require parameters, but found: {unexpected_params} (qa, i={i}); stripping.")
                                 tool_call['arguments'] = {}
                     
                     if not valid_tool_call:
@@ -3413,10 +3413,10 @@ class LLMGenerationManager:
                     
                     assert isinstance(doc_list,list) and isinstance(code_list,list) and isinstance(attempt_list,list)
                     
-                    # CoVaPh tool handling
-                    if is_covaph_call:
-                        if covaph_tool_executed:
-                            raise ValueError(f"Duplicate CoVaPh tool call detected (i={i}, tid={tid}). Only one CoVaPh tool call is allowed per turn.")
+                    # PGx tool handling
+                    if is_pgx_call:
+                        if pgx_tool_executed:
+                            raise ValueError(f"Duplicate PGx tool call detected (i={i}, tid={tid}). Only one PGx tool call is allowed per turn.")
                         
                         tool_name = tool_call['name']
                         mode = _get_mode(tool_name)
@@ -3426,7 +3426,7 @@ class LLMGenerationManager:
                         
                         print(f"[Actor Pipeline Selection] ========== Executing Selected Pipeline Mode ==========")
                         print(f"[Actor Pipeline Selection] Sample {i}: Pipeline Mode = {mode.upper()} (Tool: {tool_name})")
-                        print(f"[Tool Orchestration] ========== CoVaPh Tool Call in execute_predictions ==========")
+                        print(f"[Tool Orchestration] ========== PGx Tool Call in execute_predictions ==========")
                         print(f"[Tool Orchestration] Category: {cur_category}, Index: {i}, Query ID: {query_id}")
                         print(f"[Tool Orchestration] 🔧 Selected Pipeline Mode: {mode.upper()} (Tool: {tool_name})")
                         print(f"[Tool Orchestration] Question: {question[:200]}...")
@@ -3448,22 +3448,22 @@ class LLMGenerationManager:
                             'item_index': i,  # Store item index to mark as used after successful execution
                             'query_id': query_id,  # Keep original query_id for reference
                         })
-                        covaph_tool_executed = True  # Mark that a CoVaPh tool has been added to queue in this step
-                        print(f"[Tool Orchestration] ✓ CoVaPh tool call added to execution queue (category={cur_category}, tool={tool_name}, mode={mode})")
-                        print(f"[Tool Orchestration] Note: Item {i} will be marked as having used a CoVaPh tool only after successful execution")
+                        pgx_tool_executed = True  # Mark that a PGx tool has been added to queue in this step
+                        print(f"[Tool Orchestration] ✓ PGx tool call added to execution queue (category={cur_category}, tool={tool_name}, mode={mode})")
+                        print(f"[Tool Orchestration] Note: Item {i} will be marked as having used a PGx tool only after successful execution")
             elif cur_category=='func_call':
                 assert cur_transfer_dir
                 
-                # Check if this is a CoVaPh tool call
-                has_covaph_tool_call = False
+                # Check if this is a PGx tool call
+                has_pgx_tool_call = False
                 if isinstance(iter_tool_calls, list) and len(iter_tool_calls) > 0:
                     for tc in iter_tool_calls:
                         if isinstance(tc, dict):
                             tool_name = tc['name']
-                            if _is_covaph_tool(tool_name):
-                                has_covaph_tool_call = True
+                            if _is_pgx_tool(tool_name):
+                                has_pgx_tool_call = True
                                 mode = _get_mode(tool_name)
-                                print(f"[Tool Orchestration] Preparing CoVaPh tool execution (func_call, i={i}): tool={tool_name}, mode={mode}")
+                                print(f"[Tool Orchestration] Preparing PGx tool execution (func_call, i={i}): tool={tool_name}, mode={mode}")
                                 break
                 
                 call_tool_arguments.append({
@@ -3503,7 +3503,7 @@ class LLMGenerationManager:
         if not os.path.isdir(os.path.join(cur_output_dir,'tool_return')):
             os.makedirs(os.path.join(cur_output_dir,'tool_return'),exist_ok=True)
         # Log summary before building tool_call_list
-        total_covaph_calls = 0
+        total_pgx_calls = 0
         total_tool_calls = 0
         for call_tool_arguments in all_call_tool_arguments:
             total_tool_calls += len(call_tool_arguments)
@@ -3514,21 +3514,21 @@ class LLMGenerationManager:
                     for tc in tool_name:
                         if isinstance(tc, dict):
                             tc_name = tc['name']
-                            if _is_covaph_tool(tc_name):
-                                total_covaph_calls += 1
+                            if _is_pgx_tool(tc_name):
+                                total_pgx_calls += 1
                 elif isinstance(tool_name, dict):
                     # Should not happen, but handle it
                     if 'name' in tool_name:
-                        if _is_covaph_tool(tool_name['name']):
-                            total_covaph_calls += 1
+                        if _is_pgx_tool(tool_name['name']):
+                            total_pgx_calls += 1
                 elif isinstance(tool_name, str):
                     # qa category: tool is a string (tool name)
-                    if _is_covaph_tool(tool_name):
-                        total_covaph_calls += 1
+                    if _is_pgx_tool(tool_name):
+                        total_pgx_calls += 1
                 else:
                     raise TypeError(f"Unexpected type for 'tool' field: {type(tool_name)}")
         
-        print(f"[Tool Orchestration] Summary: {total_tool_calls} total tool call(s) prepared, {total_covaph_calls} CoVaPh tool call(s)")
+        print(f"[Tool Orchestration] Summary: {total_tool_calls} total tool call(s) prepared, {total_pgx_calls} PGx tool call(s)")
         
         tool_call_list = []
         for idx, iter_call_argument in enumerate(all_call_tool_arguments):
@@ -3540,10 +3540,10 @@ class LLMGenerationManager:
                     'all_call_arguments': iter_call_argument
                 }])
         
-        print(f"[Tool Orchestration] Tool execution summary: {total_covaph_calls} CoVaPh call(s), {len(tool_call_list)} batch(es) to execute, {total_tool_calls} total tool call(s)")
+        print(f"[Tool Orchestration] Tool execution summary: {total_pgx_calls} PGx call(s), {len(tool_call_list)} batch(es) to execute, {total_tool_calls} total tool call(s)")
         
-        if total_covaph_calls > 0:
-            print(f"[Tool Orchestration] ========== Executing {total_covaph_calls} CoVaPh tool call(s) from {len(tool_call_list)} batch(es) ==========")
+        if total_pgx_calls > 0:
+            print(f"[Tool Orchestration] ========== Executing {total_pgx_calls} PGx tool call(s) from {len(tool_call_list)} batch(es) ==========")
         
         if len(tool_call_list) == 0:
             print(f"[Tool Orchestration] WARNING: No tool calls to execute (all items produced malformed output). Skipping async execution.")
@@ -3559,40 +3559,40 @@ class LLMGenerationManager:
             if len(results) > 0:
                 for idx, result in enumerate(results):
                     tool_name_in_result = result['tool']
-                    # Non-CoVaPh tools should not exist - throw error immediately
-                    if not _is_covaph_tool(tool_name_in_result):
-                        raise ValueError(f"Non-CoVaPh tool '{tool_name_in_result}' found in results. Only CoVaPh tools are allowed.")
+                    # Non-PGx tools should not exist - throw error immediately
+                    if not _is_pgx_tool(tool_name_in_result):
+                        raise ValueError(f"Non-PGx tool '{tool_name_in_result}' found in results. Only PGx tools are allowed.")
                     
-                    # For CoVaPh tools, these fields should always exist
+                    # For PGx tools, these fields should always exist
                     cost = result['cost']
                     print(f"[Tool Orchestration]   Result {idx+1}/{len(results)}: tool={tool_name_in_result}, cost={cost}")
                     
-                    # Process CoVaPh tool result
-                    if _is_covaph_tool(tool_name_in_result):
+                    # Process PGx tool result
+                    if _is_pgx_tool(tool_name_in_result):
                         # result_id should be the item index (we set id=str(i) when adding to queue)
                         if not result_id.isdigit():
-                            raise ValueError(f"Expected numeric result_id for CoVaPh tool result, got: {result_id}")
+                            raise ValueError(f"Expected numeric result_id for PGx tool result, got: {result_id}")
                         item_idx = int(result_id)
                         # Verify item_index if present (should match)
                         if 'item_index' in result:
                             if result['item_index'] != item_idx:
                                 raise ValueError(f"Item index mismatch: result_id={result_id}, result['item_index']={result['item_index']}")
-                        if item_idx >= len(covaph_tool_used_per_item):
-                            raise IndexError(f"Item index {item_idx} out of range for covaph_tool_used_per_item (len={len(covaph_tool_used_per_item)})")
+                        if item_idx >= len(pgx_tool_used_per_item):
+                            raise IndexError(f"Item index {item_idx} out of range for pgx_tool_used_per_item (len={len(pgx_tool_used_per_item)})")
                         response_text = result['response']
-                        covaph_result = result['covaph_result']
+                        pgx_result = result['pgx_result']
                         # Only mark as used if we actually got a response (execution succeeded)
-                        if not (response_text or covaph_result):
-                            raise ValueError(f"CoVaPh tool execution failed for item {item_idx}: no response or result returned")
-                        covaph_tool_used_per_item[item_idx] = True
-                        print(f"[Tool Orchestration] ✓ Item {item_idx} marked as having used a CoVaPh tool (execution confirmed from result processing)")
+                        if not (response_text or pgx_result):
+                            raise ValueError(f"PGx tool execution failed for item {item_idx}: no response or result returned")
+                        pgx_tool_used_per_item[item_idx] = True
+                        print(f"[Tool Orchestration] ✓ Item {item_idx} marked as having used a PGx tool (execution confirmed from result processing)")
             tool_responses[result_id] = results
         
-        if total_covaph_calls > 0:
-            print(f"[Tool Orchestration] ========== CoVaPh tool execution completed ==========")
+        if total_pgx_calls > 0:
+            print(f"[Tool Orchestration] ========== PGx tool execution completed ==========")
             print(f"[Tool Orchestration] Tool responses collected: {len(tool_responses)} item(s)")
         elif len(tool_call_list) > 0:
-            raise ValueError("Tool calls were executed but no CoVaPh calls were detected in results")
+            raise ValueError("Tool calls were executed but no PGx calls were detected in results")
 
         cur_documents, cur_code, cur_attempts, dones, attempt_correct,costs, tool_summary, latencies,all_attempt_results,valid_answers_generated,used_llms = [], [], [], [], [], [], [], [], [], [], []
         # for i,(active,previous_cost) in enumerate(zip(active_mask,total_costs)):
@@ -3635,23 +3635,23 @@ class LLMGenerationManager:
                 iter_valid_answer = False
                 iter_used_llms = []
                 for cur_response in tool_responses[str(i)]:
-                    # Log CoVaPh tool execution results
+                    # Log PGx tool execution results
                     tool_name = cur_response['tool']
-                    is_covaph_tool_result = _is_covaph_tool(tool_name) or (isinstance(cur_response, dict) and 'covaph_result' in cur_response)
-                    if is_covaph_tool_result:
-                        print(f"[Tool Orchestration] Processing CoVaPh tool result (i={i}):")
-                        if 'covaph_result' in cur_response:
-                            covaph_result = cur_response['covaph_result']
-                            run_id = covaph_result.get('run_id') or covaph_result.get('run_dir', '')  # run_dir is path string
+                    is_pgx_tool_result = _is_pgx_tool(tool_name) or (isinstance(cur_response, dict) and 'pgx_result' in cur_response)
+                    if is_pgx_tool_result:
+                        print(f"[Tool Orchestration] Processing PGx tool result (i={i}):")
+                        if 'pgx_result' in cur_response:
+                            pgx_result = cur_response['pgx_result']
+                            run_id = pgx_result.get('run_id') or pgx_result.get('run_dir', '')  # run_dir is path string
                             if isinstance(run_id, str) and '/' in run_id:
                                 run_id = run_id.split('/')[-1]  # use dir name
-                            pipeline_mode = covaph_result.get('mode', 'unknown')
+                            pipeline_mode = pgx_result.get('mode', 'unknown')
                             print(f"  🔧 Run: {run_id} | Pipeline mode: {pipeline_mode.upper()} (Tool: {tool_name})")
-                            eval_result = covaph_result.get('eval_result', None)
+                            eval_result = pgx_result.get('eval_result', None)
                             if eval_result:
                                 print(f"  Weighted score: {eval_result.get('weighted_score', 'N/A')}")
-                            print(f"  Cost: {covaph_result['cost']}")
-                            timing = covaph_result.get('timing') or {}
+                            print(f"  Cost: {pgx_result['cost']}")
+                            timing = pgx_result.get('timing') or {}
                             pipeline_t = {k: v for k, v in timing.items() if k != 'answer_evaluation'}
                             if pipeline_t:
                                 print(f"  Pipeline timing (modules): {pipeline_t}")
@@ -3669,14 +3669,14 @@ class LLMGenerationManager:
                     else:
                         # tool_summary.append([cur_response['tool'],''])
                         iter_tool_summary.append([cur_response['tool'],''])
-                    # Only CoVaPh tools are supported
-                    if _is_covaph_tool(tool_name):
-                        # Handle CoVaPh tool results (similar to answer tool)
-                        print(f"[Tool Orchestration] Processing CoVaPh tool result (i={i}):")
-                        covaph_result = cur_response['covaph_result']
+                    # Only PGx tools are supported
+                    if _is_pgx_tool(tool_name):
+                        # Handle PGx tool results (similar to answer tool)
+                        print(f"[Tool Orchestration] Processing PGx tool result (i={i}):")
+                        pgx_result = cur_response['pgx_result']
                         mode = cur_response['mode']
                         response_text = cur_response['response']
-                        eval_result = covaph_result.get('eval_result', None)
+                        eval_result = pgx_result.get('eval_result', None)
                         
                         # Determine if answer is correct based on eval_result weighted_score
                         is_correct = False
@@ -3686,36 +3686,36 @@ class LLMGenerationManager:
                         
                         print(f"  Mode: {mode}, Response length: {len(response_text)}, Weighted score: {eval_result.get('weighted_score', 0.0) if eval_result else 'N/A'}")
                         
-                        # Mark this item as having successfully executed a CoVaPh tool
+                        # Mark this item as having successfully executed a PGx tool
                         # Only mark after we confirm the tool was actually executed (has response)
-                        if not (response_text or covaph_result):
-                            raise ValueError(f"CoVaPh tool execution failed for item {i}: no response or result returned")
-                        if i >= len(covaph_tool_used_per_item):
-                            raise IndexError(f"Item index {i} out of range for covaph_tool_used_per_item (len={len(covaph_tool_used_per_item)})")
-                        covaph_tool_used_per_item[i] = True
-                        print(f"[Tool Orchestration] ✓ Item {i} marked as having used a CoVaPh tool (execution confirmed)")
+                        if not (response_text or pgx_result):
+                            raise ValueError(f"PGx tool execution failed for item {i}: no response or result returned")
+                        if i >= len(pgx_tool_used_per_item):
+                            raise IndexError(f"Item index {i} out of range for pgx_tool_used_per_item (len={len(pgx_tool_used_per_item)})")
+                        pgx_tool_used_per_item[i] = True
+                        print(f"[Tool Orchestration] ✓ Item {i} marked as having used a PGx tool (execution confirmed)")
                         
                         iter_attempt.append({
-                            'model': f'covaph_{mode}',
+                            'model': f'pgx_{mode}',
                             'answer': response_text,
                             'response': response_text,
                             'problem': user_problems[i] if i < len(user_problems) else '',
                             'ground_truth': answers[i] if i < len(answers) else '',
                             'correct': is_correct,
-                            'covaph_result': covaph_result,
+                            'pgx_result': pgx_result,
                             'mode': mode,
                         })
                         iter_dones.append(1)
                         if is_correct:
                             iter_attempt_correct.append(True)
                         iter_valid_answer = True
-                        print(f"[Tool Orchestration] ✓ CoVaPh result processed: done=1, correct={is_correct}, valid_answer=True")
+                        print(f"[Tool Orchestration] ✓ PGx result processed: done=1, correct={is_correct}, valid_answer=True")
                         iter_latency.append(cur_response['latency'])
                         iter_costs.append(cur_response['cost'])
                         break
-                    # All non-CoVaPh tools removed - only CoVaPh tools are supported
-                    # If we reach here, it means a non-CoVaPh tool was executed, which should not happen
-                    raise ValueError(f"Unexpected non-CoVaPh tool '{tool_name}' executed. Only CoVaPh tools are allowed.")
+                    # All non-PGx tools removed - only PGx tools are supported
+                    # If we reach here, it means a non-PGx tool was executed, which should not happen
+                    raise ValueError(f"Unexpected non-PGx tool '{tool_name}' executed. Only PGx tools are allowed.")
                 cur_documents.append(iter_documents)
                 cur_code.append(iter_code)
                 cur_attempts.append(iter_attempt)
@@ -3758,7 +3758,7 @@ class LLMGenerationManager:
             except Exception as e:
                 print(f"[Actor Decision] Warning: failed to save actor decisions: {e}")
 
-        return cur_documents, cur_code, cur_attempts, dones, attempt_correct,costs,tool_summary,format_correctness,latencies,all_attempt_results,valid_answers_generated,used_llms,covaph_tool_used_per_item
+        return cur_documents, cur_code, cur_attempts, dones, attempt_correct,costs,tool_summary,format_correctness,latencies,all_attempt_results,valid_answers_generated,used_llms,pgx_tool_used_per_item
 
     def postprocess_predictions(self, predictions,all_categories):
         thoughts = []
@@ -3767,12 +3767,12 @@ class LLMGenerationManager:
         assert len(all_categories)==len(predictions)
         
         # Create local reference to module-level functions to avoid UnboundLocalError
-        _is_covaph_tool = is_covaph_tool
-        _get_mode = get_covaph_mode_from_tool
-        _is_covaph_category = is_covaph_category
+        _is_pgx_tool = is_pgx_tool
+        _get_mode = get_pgx_mode_from_tool
+        _is_pgx_category = is_pgx_category
         
-        # Track CoVaPh tool calls for logging
-        covaph_tool_call_count = 0
+        # Track PGx tool calls for logging
+        pgx_tool_call_count = 0
                 
         def _extract_prefix_before_json(text: str) -> str:
             """
@@ -3789,8 +3789,8 @@ class LLMGenerationManager:
             cur_all_tool_calls = []
             format_correct = False
             
-            # Check if this is a CoVaPh category (not 'qa' or 'func_call')
-            category_is_covaph = _is_covaph_category(category)
+            # Check if this is a PGx category (not 'qa' or 'func_call')
+            category_is_pgx = _is_pgx_category(category)
             
             if isinstance(prediction, str): # for llm output
                 # Capture reasoning even if parser later succeeds (for logging/persistence).
@@ -3798,7 +3798,7 @@ class LLMGenerationManager:
                 if category=='qa':
                     components = prediction.split('<tool_call>')
                     added_tools = set()
-                    added_covaph_tools = set()
+                    added_pgx_tools = set()
                     
                     for c in components:
                         components1 = c.split('</tool_call>')
@@ -3831,66 +3831,66 @@ class LLMGenerationManager:
                             if _name not in ALL_TOOLS:
                                 raise ValueError(f"Tool '{_name}' not in ALL_TOOLS (postprocess, idx={idx}). Allowed: {list(ALL_TOOLS.keys())}")
                             
-                            if not _is_covaph_tool(tmp_tool_call['name']):
-                                print(f"[Tool Orchestration] ERROR: Tool '{tmp_tool_call['name']}' is not allowed in CoVaPh training. Only {VALID_COVAPH_TOOL_NAMES} are allowed. (category={category}, idx={idx})")
+                            if not _is_pgx_tool(tmp_tool_call['name']):
+                                print(f"[Tool Orchestration] ERROR: Tool '{tmp_tool_call['name']}' is not allowed in PGx training. Only {VALID_PGX_TOOL_NAMES} are allowed. (category={category}, idx={idx})")
                                 continue
                             
-                            # Log CoVaPh tool call detection
-                            if _is_covaph_tool(tmp_tool_call['name']):
+                            # Log PGx tool call detection
+                            if _is_pgx_tool(tmp_tool_call['name']):
                                 tool_name = tmp_tool_call['name']
                                 mode = _get_mode(tool_name)
                                 print(f"[Actor Pipeline Selection] Sample {idx}: Detected Pipeline Mode = {mode.upper()} (Tool: {tool_name}, Category: qa)")
-                                print(f"[Tool Orchestration] Detected CoVaPh tool call (qa category, idx={idx}): tool={tool_name}, mode={mode}")
+                                print(f"[Tool Orchestration] Detected PGx tool call (qa category, idx={idx}): tool={tool_name}, mode={mode}")
                                 
                                 # Ensure only one tool is selected per turn
-                                if len(added_covaph_tools) > 0:
-                                    first_tool = list(added_covaph_tools)[0]
+                                if len(added_pgx_tools) > 0:
+                                    first_tool = list(added_pgx_tools)[0]
                                     first_mode = _get_mode(first_tool)
-                                    print(f"[Tool Orchestration] WARNING: Multiple CoVaPh tool calls detected (idx={idx}). Only the first one (tool={first_tool}, mode={first_mode}) will be used. Ignoring tool={tool_name} (mode={mode}).")
+                                    print(f"[Tool Orchestration] WARNING: Multiple PGx tool calls detected (idx={idx}). Only the first one (tool={first_tool}, mode={first_mode}) will be used. Ignoring tool={tool_name} (mode={mode}).")
                                     continue
                                 
-                                added_covaph_tools.add(tool_name)
-                                covaph_tool_call_count += 1
+                                added_pgx_tools.add(tool_name)
+                                pgx_tool_call_count += 1
                             
-                            # General duplicate tool check (for non-CoVaPh tools, though they shouldn't exist)
+                            # General duplicate tool check (for non-PGx tools, though they shouldn't exist)
                             if tmp_tool_call['name'] in added_tools:
                                 continue
                             added_tools.add(tmp_tool_call['name'])
-                            # Validate tool signature (CoVaPh tools have no parameters)
+                            # Validate tool signature (PGx tools have no parameters)
                             func_signature = ALL_TOOLS.get(tmp_tool_call['name'], {})
                             if func_signature != {}:
                                 # Tool has parameters - validate them
                                 for parameter_name, parameter_values in func_signature.items():
                                     assert tmp_tool_call["arguments"][parameter_name] in parameter_values or parameter_values=='any'
                             else:
-                                # CoVaPh tools have no parameters - allow empty arguments or {"parameters": {}}
-                                tool_args = _normalize_covaph_tool_arguments(tmp_tool_call.get('arguments', {}))
+                                # PGx tools have no parameters - allow empty arguments or {"parameters": {}}
+                                tool_args = _normalize_pgx_tool_arguments(tmp_tool_call.get('arguments', {}))
                                 if tool_args not in [{}, None]:
                                     unexpected_params = list(tool_args.keys()) if isinstance(tool_args, dict) else []
                                     if unexpected_params:
-                                        print(f"[Tool Orchestration][FAIL-SOFT] CoVaPh tool '{tmp_tool_call['name']}' does not require parameters, but found: {unexpected_params} (postprocess qa, idx={idx}); stripping.")
+                                        print(f"[Tool Orchestration][FAIL-SOFT] PGx tool '{tmp_tool_call['name']}' does not require parameters, but found: {unexpected_params} (postprocess qa, idx={idx}); stripping.")
                                         tmp_tool_call['arguments'] = {}
                             
                             cur_all_tool_calls.append(tmp_tool_call)
                     if len(cur_all_tool_calls)>0:
                         format_correct = True
-                elif category=='func_call' or category_is_covaph:
-                    # For func_call or CoVaPh categories, handle tool calling similarly
-                    if category_is_covaph:
-                        print(f"[Tool Orchestration] Processing CoVaPh category '{category}' (idx={idx}): attempting to parse tool calls")
+                elif category=='func_call' or category_is_pgx:
+                    # For func_call or PGx categories, handle tool calling similarly
+                    if category_is_pgx:
+                        print(f"[Tool Orchestration] Processing PGx category '{category}' (idx={idx}): attempting to parse tool calls")
                         print(f"  Prediction preview: {prediction[:300]}...")
                     
                     # Preserve thought captured above (everything before the first '{').
                     
-                    # Track CoVaPh tools to ensure only one is selected
-                    added_covaph_tools = set()
+                    # Track PGx tools to ensure only one is selected
+                    added_pgx_tools = set()
                     added_tools = set()
 
                     fallback_fired = False
-                    def _covaph_fallback(reason: str) -> None:
+                    def _pgx_fallback(reason: str) -> None:
                         """
-                        Fail-soft for CoVaPh formatting issues. The earlier rollout-level
-                        retry (run_llm_loop's COVAPH_MAX_PARSE_RETRY) already gave the model
+                        Fail-soft for PGx formatting issues. The earlier rollout-level
+                        retry (run_llm_loop's PGX_MAX_PARSE_RETRY) already gave the model
                         up to 3 attempts to produce a valid output. If we still can't parse,
                         default to the fallback tool (self.fallback_tool) and mark
                         format_correct=False so the reward layer drops the bad format.
@@ -3902,7 +3902,7 @@ class LLMGenerationManager:
                             should_print = (torch.distributed.get_rank() == 0)
                         if should_print:
                             print(
-                                f"[Tool Orchestration][FAIL-SOFT] CoVaPh output format not parseable (idx={idx}, category='{category}'). "
+                                f"[Tool Orchestration][FAIL-SOFT] PGx output format not parseable (idx={idx}, category='{category}'). "
                                 f"Reason: {reason}. Defaulting to {self.fallback_tool}."
                             )
                             print(f"[Tool Orchestration][FAIL-SOFT] FULL PREDICTION (idx={idx}, len={len(prediction)} chars) BEGIN >>>")
@@ -3912,9 +3912,9 @@ class LLMGenerationManager:
                         # Under STRICT_TOOL_PARSE the rollout made no decision, so substituting one would
                         # credit the model with a choice it never made: leave the list empty instead. The
                         # reward path already handles that (tool not in active_tools -> score 0).
-                        if os.environ.get("STRICT_TOOL_PARSE", "0") == "1" and category_is_covaph:
+                        if os.environ.get("STRICT_TOOL_PARSE", "0") == "1" and category_is_pgx:
                             return
-                        if not any(_is_covaph_tool(tc.get('name')) for tc in cur_all_tool_calls if isinstance(tc, dict)):
+                        if not any(_is_pgx_tool(tc.get('name')) for tc in cur_all_tool_calls if isinstance(tc, dict)):
                             cur_all_tool_calls.append({"name": self.fallback_tool, "arguments": {}})
                         # The caller still expects to see something; format_correct is set to
                         # False at the call site (we don't return True here, and the existing
@@ -3933,8 +3933,8 @@ class LLMGenerationManager:
                             # Find the first { and match it with its closing }
                             json_start = tag_content.find('{')
                             if json_start == -1:
-                                if category_is_covaph:
-                                    _covaph_fallback("No JSON object found inside <tool_call> tag")
+                                if category_is_pgx:
+                                    _pgx_fallback("No JSON object found inside <tool_call> tag")
                                     break
                                 raise ValueError(f"No JSON object (starting with '{{') found in <tool_call> tag content (category={category}, idx={idx}). Content preview: {tag_content[:200]}...")
                             
@@ -3951,8 +3951,8 @@ class LLMGenerationManager:
                                         break
                             
                             if brace_count != 0:
-                                if category_is_covaph:
-                                    _covaph_fallback("Unmatched braces in <tool_call> JSON")
+                                if category_is_pgx:
+                                    _pgx_fallback("Unmatched braces in <tool_call> JSON")
                                     break
                                 raise ValueError(f"Unmatched braces in JSON object (category={category}, idx={idx}). Content preview: {tag_content[json_start:json_start+200]}...")
                             
@@ -3960,34 +3960,34 @@ class LLMGenerationManager:
                             tmp_tool_call = json.loads(json_str)
                             
                             if not isinstance(tmp_tool_call, dict):
-                                if category_is_covaph:
-                                    _covaph_fallback(f"Parsed <tool_call> JSON is not a dict: {type(tmp_tool_call)}")
+                                if category_is_pgx:
+                                    _pgx_fallback(f"Parsed <tool_call> JSON is not a dict: {type(tmp_tool_call)}")
                                     break
                                 raise TypeError(f"Parsed tool_call is not a dict: {type(tmp_tool_call)} (category={category}, idx={idx})")
                             
                             tool_name = tmp_tool_call['name']
                             
-                            if _is_covaph_tool(tool_name):
+                            if _is_pgx_tool(tool_name):
                                 mode = _get_mode(tool_name)
                                 print(f"[Actor Pipeline Selection] Sample {idx}: Detected Pipeline Mode = {mode.upper()} (Tool: {tool_name}, Category: {category})")
-                                print(f"[Tool Orchestration] ✓ Detected CoVaPh tool call from <tool_call> tag (category={category}, idx={idx}): tool={tool_name}, mode={mode}")
+                                print(f"[Tool Orchestration] ✓ Detected PGx tool call from <tool_call> tag (category={category}, idx={idx}): tool={tool_name}, mode={mode}")
                                 
                                 # Ensure only one tool is selected per turn
-                                if len(added_covaph_tools) > 0:
-                                    first_tool = list(added_covaph_tools)[0]
+                                if len(added_pgx_tools) > 0:
+                                    first_tool = list(added_pgx_tools)[0]
                                     first_mode = _get_mode(first_tool)
-                                    if category_is_covaph:
-                                        _covaph_fallback("Multiple CoVaPh tool calls detected in <tool_call> tags")
+                                    if category_is_pgx:
+                                        _pgx_fallback("Multiple PGx tool calls detected in <tool_call> tags")
                                         break
-                                    raise ValueError(f"Multiple CoVaPh tool calls detected (idx={idx}). Only one CoVaPh tool call is allowed per turn. Already added: {first_tool} (mode={first_mode}), trying to add: {tool_name} (mode={mode}).")
+                                    raise ValueError(f"Multiple PGx tool calls detected (idx={idx}). Only one PGx tool call is allowed per turn. Already added: {first_tool} (mode={first_mode}), trying to add: {tool_name} (mode={mode}).")
                                 
-                                added_covaph_tools.add(tool_name)
-                                covaph_tool_call_count += 1
+                                added_pgx_tools.add(tool_name)
+                                pgx_tool_call_count += 1
                             
                             # General duplicate tool check
                             if tool_name in added_tools:
-                                if category_is_covaph:
-                                    _covaph_fallback(f"Duplicate tool call '{tool_name}' detected")
+                                if category_is_pgx:
+                                    _pgx_fallback(f"Duplicate tool call '{tool_name}' detected")
                                     break
                                 raise ValueError(f"Duplicate tool call '{tool_name}' detected (category={category}, idx={idx})")
                             added_tools.add(tool_name)
@@ -3995,19 +3995,19 @@ class LLMGenerationManager:
                         if len(cur_all_tool_calls)>0 and not fallback_fired:
                             format_correct = True
                     # Try parsing JSON tool calls in text (alternative format)
-                    elif any(tool_name in prediction.lower() for tool_name in VALID_COVAPH_TOOL_NAMES) or '"name":' in prediction:
+                    elif any(tool_name in prediction.lower() for tool_name in VALID_PGX_TOOL_NAMES) or '"name":' in prediction:
                         print(f"[Tool Orchestration] Attempting to extract tool call from JSON-like text (category={category}, idx={idx})")
                         import re
-                        # Look for JSON-like structures matching any CoVaPh tool
-                        tool_patterns = '|'.join(VALID_COVAPH_TOOL_NAMES)
+                        # Look for JSON-like structures matching any PGx tool
+                        tool_patterns = '|'.join(VALID_PGX_TOOL_NAMES)
                         # STRICT_TOOL_PARSE: the decision is the JSON AFTER the last </think>. A name the
                         # model wrote inside its own reasoning is not a decision, and a rollout that never
                         # closed </think> was truncated and made no decision at all.
-                        _strict = os.environ.get("STRICT_TOOL_PARSE", "0") == "1" and category_is_covaph
+                        _strict = os.environ.get("STRICT_TOOL_PARSE", "0") == "1" and category_is_pgx
                         _search_text = prediction
                         if _strict:
                             if "</think>" not in prediction:
-                                _covaph_fallback("STRICT_TOOL_PARSE: no </think> — thinking was truncated, no final answer")
+                                _pgx_fallback("STRICT_TOOL_PARSE: no </think> — thinking was truncated, no final answer")
                                 _search_text = ""
                             else:
                                 _search_text = prediction.split("</think>")[-1]
@@ -4031,11 +4031,11 @@ class LLMGenerationManager:
                                 _w, _b = _flag[0]
                                 _direct = (_w.lower() == "direct") if _w else (_b.lower() == "false")
                             if _direct is None or _direct != (matches[0] == _nort):
-                                _covaph_fallback(f"TWO_STAGE_ROUTER: {_fk} flag {_flag} "
+                                _pgx_fallback(f"TWO_STAGE_ROUTER: {_fk} flag {_flag} "
                                                  f"disagrees with tool {matches[0]}")
                                 matches = []
-                        if len(matches) != 1 and category_is_covaph:
-                            _covaph_fallback("Could not uniquely identify a single CoVaPh tool name in JSON-like text")
+                        if len(matches) != 1 and category_is_pgx:
+                            _pgx_fallback("Could not uniquely identify a single PGx tool name in JSON-like text")
                             matches = []
                         for tool_name in matches:
                             tmp_tool_call = {"name": tool_name, "arguments": {}}
@@ -4043,35 +4043,35 @@ class LLMGenerationManager:
                                 raise TypeError(f"Parsed tool_call is not a dict: {type(tmp_tool_call)} (category={category}, idx={idx})")
                             
                             tool_name = tmp_tool_call['name']
-                            if _is_covaph_tool(tool_name):
+                            if _is_pgx_tool(tool_name):
                                 mode = _get_mode(tool_name)
                                 print(f"[Actor Pipeline Selection] Sample {idx}: Extracted Pipeline Mode = {mode.upper()} (Tool: {tool_name}, Category: {category})")
-                                print(f"[Tool Orchestration] ✓ Extracted CoVaPh tool call from JSON-like text (category={category}, idx={idx}): tool={tool_name}, mode={mode}")
+                                print(f"[Tool Orchestration] ✓ Extracted PGx tool call from JSON-like text (category={category}, idx={idx}): tool={tool_name}, mode={mode}")
                                 
                                 # Ensure only one tool is selected per turn
-                                if len(added_covaph_tools) > 0:
-                                    first_tool = list(added_covaph_tools)[0]
+                                if len(added_pgx_tools) > 0:
+                                    first_tool = list(added_pgx_tools)[0]
                                     first_mode = _get_mode(first_tool)
-                                    if category_is_covaph:
-                                        _covaph_fallback("Multiple CoVaPh tool calls detected in JSON-like text")
+                                    if category_is_pgx:
+                                        _pgx_fallback("Multiple PGx tool calls detected in JSON-like text")
                                         break
-                                    raise ValueError(f"Multiple CoVaPh tool calls detected (idx={idx}). Only one CoVaPh tool call is allowed per turn. Already added: {first_tool} (mode={first_mode}), trying to add: {tool_name} (mode={mode}).")
+                                    raise ValueError(f"Multiple PGx tool calls detected (idx={idx}). Only one PGx tool call is allowed per turn. Already added: {first_tool} (mode={first_mode}), trying to add: {tool_name} (mode={mode}).")
                                 
-                                added_covaph_tools.add(tool_name)
-                                covaph_tool_call_count += 1
+                                added_pgx_tools.add(tool_name)
+                                pgx_tool_call_count += 1
                                 cur_all_tool_calls.append(tmp_tool_call)
                                 format_correct = True
                     elif '<message>' in prediction:
                         cur_all_tool_calls.append(prediction.split('<message>')[-1].split('</message>')[0])
                     else:
                         # No tool call found in text format
-                        if category_is_covaph:
-                            _covaph_fallback("No <tool_call> tags or JSON tool call detected")
+                        if category_is_pgx:
+                            _pgx_fallback("No <tool_call> tags or JSON tool call detected")
             
-            # Choke point: a parsed CoVaPh tool not in the active set must NOT be executed and
+            # Choke point: a parsed PGx tool not in the active set must NOT be executed and
             # must not be trained. Route it to the fallback tool and mark the format incorrect.
             _nonactive = [tc.get("name") for tc in cur_all_tool_calls
-                          if isinstance(tc, dict) and _is_covaph_tool(tc.get("name"))
+                          if isinstance(tc, dict) and _is_pgx_tool(tc.get("name"))
                           and tc.get("name") not in self.active_tools]
             if _nonactive:
                 print(f"[Tool Orchestration][CHOKE] idx={idx}: non-active tool(s) {_nonactive} "
@@ -4084,8 +4084,8 @@ class LLMGenerationManager:
             formats.append(format_correct)
         
         # Summary log
-        if covaph_tool_call_count > 0:
-            print(f"[Tool Orchestration] Summary: Found {covaph_tool_call_count} CoVaPh tool call(s) in {len(predictions)} predictions")
+        if pgx_tool_call_count > 0:
+            print(f"[Tool Orchestration] Summary: Found {pgx_tool_call_count} PGx tool call(s) in {len(predictions)} predictions")
             
         return tool_calls, thoughts, formats
 

@@ -1,7 +1,7 @@
 """Live reward table for REWARD_ADV_MODE=cache_baseline.
 
 Every training step, each question in the batch is answered by every active tool's pipeline
-(covaph_env.run_mode, which reuses what the rollouts already ran) and each answer is scored
+(pgx_env.run_mode, which reuses what the rollouts already ran) and each answer is scored
 against the question's GT claims with the Verifier. The result has the shape
 compute_cache_baseline_rewards expects:
 
@@ -24,7 +24,7 @@ for _sub in ("PGxRoute", "Verifier"):
     if str(_REPO / _sub) not in sys.path:
         sys.path.insert(0, str(_REPO / _sub))
 
-from router_reward import covaph_env                # noqa: E402
+from router_reward import pgx_env                # noqa: E402
 from pgxverifier.steps.score import f_beta          # noqa: E402
 from pgxverifier.verifier import Verifier           # noqa: E402
 
@@ -69,7 +69,7 @@ def answer_f(verified):
 
 
 def _score(question, gt, tool):
-    res = covaph_env.run_mode(question, TOOL_TO_MODE[tool])
+    res = pgx_env.run_mode(question, TOOL_TO_MODE[tool])
     if res.get("error"):
         raise RuntimeError(res["error"])
     text = res.get("response") or ""
@@ -110,7 +110,7 @@ def build_reward_table(all_turn_index, all_turn_problems, active_tools, global_s
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "live_reward_table.json"), "w", encoding="utf-8") as f:
             json.dump({"table": table, "failed": failed}, f, indent=1)
-    covaph_env.clear_step_results()
+    pgx_env.clear_step_results()
     print(f"[Live Reward] step {global_steps}: {len(questions)} questions x {len(active_tools)} tools "
           f"scored live, {len(failed)} failed", flush=True)
     return table

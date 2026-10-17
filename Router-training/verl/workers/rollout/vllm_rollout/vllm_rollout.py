@@ -62,7 +62,7 @@ from verl.utils.debug import GPUMemoryLogger
 from verl.utils.torch_functional import get_response_mask, pad_sequence_to_length
 from verl.workers.rollout.base import BaseRollout
 
-# CoVaPh global config (actor sampling temperature)
+# PGx global config (actor sampling temperature)
 from config import RL_ACTOR_TEMPERATURE as _RL_ACTOR_TEMPERATURE_DEFAULT
 
 from verl.utils.vllm_utils import coerce_vllm_sampling_kwargs
