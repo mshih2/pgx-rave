@@ -23,8 +23,9 @@ needs verification by a licensed pharmacist or clinician.
 | [`Question-generation/`](Question-generation/) | Builds a question bank: hard, intermediate and common questions with GT and curated GT claims, cross-reviewed by two LLMs before a human check |
 | [`Router-training/`](Router-training/) | GRPO training of the LLM router, with rewards computed live from the PGxRoute pipelines and the Verifier (includes the modified verl it runs on) |
 | [`Frontier-baselines/`](Frontier-baselines/) | The system prompt and runner for asking frontier models with web search the same questions |
+| [`question-bank/ai-assisted/`](question-bank/ai-assisted/) | 153 questions of the PGx question bank that were drafted with AI assistance and then curated, each with its GT answer and GT claims |
 
-Each folder has its own README, requirements and licence. The folders work together:
+Each code folder has its own README, requirements and licence. The folders work together:
 
 - Question-generation gets each question's CPIC lookup and passages through PGxRoute, and
   decomposes GT claims with the Verifier.
@@ -32,6 +33,34 @@ Each folder has its own README, requirements and licence. The folders work toget
   answers with the Verifier, every step.
 - Answers from PGxRoute or Frontier-baselines are scored with the Verifier against the bank's
   GT claims.
+
+## Question bank
+
+The bank's questions fall into three tiers by where their evidence lives:
+
+- **hard:** needs CPIC guideline or supplement text beyond the CPIC API's core recommendation;
+- **intermediate:** answerable from one CPIC API lookup;
+- **common:** everyday medication questions with no PGx content.
+
+Three licensed pharmacists experienced in interpreting CPIC guidelines defined with us the
+principles for a question-answer pair: the elements a question must state, the facets an answer
+must cover and the answer format. They also wrote hard sample pairs from the CPIC guidelines and
+drug information.
+
+The other questions were generated with AI assistance:
+
+- Hard and intermediate questions were modelled on the pharmacist-written pairs in what an answer
+  must cover, its format and its easy-to-digest style. Their GT is built only from the tier's CPIC
+  source.
+- Common questions were also generated with AI assistance.
+
+LLMs cross-reviewed the hard and intermediate questions and their GT. The non-pharmacist authors
+then checked every item word by word.
+
+[`question-bank/ai-assisted/`](question-bank/ai-assisted/) holds these AI-assisted questions, with
+their GT answers, curated GT claims and evaluation or tuning split. The pharmacist-written pairs
+are not included. [`Question-generation/`](Question-generation/) is the code for building
+questions and GT this way.
 
 ## Models and services
 
@@ -67,9 +96,9 @@ python Verifier/run.py --input items.jsonl --out results/
 
 ## Not included
 
-This repository holds code and prompts only. It includes no question bank, model outputs or
-scores, and no trained router models; `PGxRoute/` and `Router-training/` describe how to train
-your own.
+Apart from the AI-assisted questions in `question-bank/`, this repository holds code and prompts
+only. It includes no model outputs or scores, and no trained router models; `PGxRoute/` and
+`Router-training/` describe how to train your own.
 
 **Retrieval corpus.** The Full pipeline retrieves from a corpus built from CPIC guideline
 articles and their supplements. The corpus is not included, for two reasons:
@@ -95,5 +124,7 @@ Question-generation, and the live reward in Router-training. These parts work wi
 ## Licence
 
 The code and prompts in every folder are under the Apache License 2.0 (each folder's `LICENSE`).
-The verl code in `Router-training/verl/` keeps its Apache 2.0 licence and `NOTICE`. CPIC API
-content is CC0 1.0. The models and APIs keep their own licences and terms.
+The question-answer pairs in `question-bank/` are under CC BY 4.0
+(`question-bank/ai-assisted/LICENSE`). The verl code in `Router-training/verl/` keeps its Apache
+2.0 licence and `NOTICE`. CPIC API content is CC0 1.0. The models and APIs keep their own licences
+and terms.
