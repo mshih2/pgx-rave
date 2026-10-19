@@ -126,6 +126,18 @@ Two OpenAI-compatible vLLM servers are expected:
 | Qwen3.8-27B | `qwen3.8-27b` | reasoner (all pipelines), reranker (Full) | `REASONER_BASE_URL` (default `http://127.0.0.1:8019/v1`) |
 | Gemma-4-31B-it | `gemma-4-31b-it` | critique (Full) | `CRITIC_URL` (default `http://127.0.0.1:8006/v1/chat/completions`) |
 
+Server launch settings (`vllm serve <model> <flags>`):
+
+| Model | vLLM | Flags |
+|---|---|---|
+| Qwen3.8-27B | 0.19.1 | `--served-model-name qwen3.8-27b --port 8019 --dtype bfloat16 --max-model-len 49152` |
+| Gemma-4-31B-it | 0.19.1 | `--served-model-name gemma-4-31b-it --port 8006 --dtype bfloat16 --max-model-len 32768` |
+
+The Qwen3.8-27B context must hold the reranker's 40,960-token window. Sampling parameters that a
+request leaves unset come from the model's `generation_config.json` (vLLM's default
+`--generation-config auto`): top-k 20 for the reasoner, and top-p 0.95 and top-k 64 for the
+critique.
+
 BGE-M3 (`BAAI/bge-m3`) runs in process through FlagEmbedding on `EMBED_DEVICE`. If FlagEmbedding
 needs a different `transformers` version from the main environment, install it in a separate
 environment and set `EMBED_PYTHON` to that interpreter; ranking then runs as a subprocess

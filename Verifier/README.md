@@ -60,6 +60,17 @@ claims, R = 0.
 | Grok 4.5 (`grok-4.5`) through the xAI API | labelling judge, temperature 0, no output cap | `XAI_API_KEY` (required), `LABEL_MODEL` |
 | Mistral-Small-24B-Instruct-2501 (`mistral-small-24b`) on an OpenAI-compatible vLLM server | grading judge, log-probabilities (top 15) | `GRADER_URL` (default `http://127.0.0.1:8012/v1`) |
 
+Server launch settings (`vllm serve <model> <flags>`):
+
+| Model | vLLM | Flags |
+|---|---|---|
+| Gemma-4-31B-it | 0.19.1 | `--served-model-name gemma-4-31b-it --port 8006 --dtype bfloat16 --max-model-len 32768` |
+| Mistral-Small-24B-Instruct-2501 | 0.25.1 | `--served-model-name mistral-small-24b --port 8012 --max-model-len 32768 --max-logprobs 20` |
+
+`--max-logprobs` must be at least 15, the number of top log-probabilities the grading judge reads.
+One Gemma server can serve both the decomposer and PGxRoute's critique step (both default to port
+8006).
+
 The decomposer server should expose vLLM's `/tokenize` route, which is used to fit each request
 into the context; without it, requests run unclamped. Other defaults are in
 `pgxverifier/config.py`.
